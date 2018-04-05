@@ -4,6 +4,8 @@
 *.csv
 *.dbf
 *.shp
+*.sbn
+*.sbx
 *.cpg
 *.prj
 *.qpj
