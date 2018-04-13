@@ -1,26 +1,69 @@
 package engd_abm;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import ec.util.MersenneTwisterFast;
 import sim.engine.SimState;
 import sim.field.continuous.Continuous2D;
 import sim.field.geo.GeomVectorField;
+import sim.field.network.Network;
+import sim.util.Bag;
+import sim.util.geo.GeomPlanarGraph;
+import sim.util.geo.GeomPlanarGraphEdge;
 
 class EngDModel extends SimState {
 
 	public Continuous2D world;
-	public GeomVectorField roads;
+	
+	public Network roadNetwork = new Network();
+	public GeomVectorField lsoa;
+	public static GeomVectorField roads;
 	public GeomVectorField flood2;
 	public GeomVectorField flood3;
+	public static GeomVectorField agents = new GeomVectorField();
+	
+	public static GeomPlanarGraph network = new GeomPlanarGraph();
+    // Stores road network connections
+    public static GeomVectorField junctions = new GeomVectorField();
+    // Stores nodes for road intersections
+    //static ArrayList<agents.EngDAgent> agentList = new ArrayList<agents.EngDAgent>();
+    public static HashMap<Integer, GeomPlanarGraphEdge> idsToEdges =
+        new HashMap<Integer, GeomPlanarGraphEdge>();
+    public HashMap<GeomPlanarGraphEdge, ArrayList<EngDAgent>> edgeTraffic =
+            new HashMap<GeomPlanarGraphEdge, ArrayList<EngDAgent>>();
+        public GeomVectorField mainagents = new GeomVectorField();
+        
+    static ArrayList<EngDAgent> agentList = new ArrayList<EngDAgent>();
+    
+    private static ArrayList<String> csvData = new ArrayList<String>();
+	
+    public boolean goToLSOA = true;
+    
+    public boolean getGoToLSOA()	{
+        return goToLSOA;
+    }
+    
+    public int activeCount;
+	public int pop_width;
+	public int pop_height;
 	public int world_width;
 	public int world_height;
+	
+	public long total_pop = 0;
+	
+	//public Bag agents;
 
 	public EngDModel(long seed) {
 		super(seed);
+		random = new MersenneTwisterFast(12345);
 	}
 
 	@Override
 	public void start() {
 		System.out.println("Model initializing...");
 		super.start();
+		//agents  = new Bag();
 		EngDModelBuilder.initializeWorld(this);
 	}
 
@@ -40,6 +83,14 @@ class EngDModel extends SimState {
 		// simState.start();
 		System.exit(0);
 
+	}
+
+	public static ArrayList<String> getCsvData() {
+		return csvData;
+	}
+
+	public static void setCsvData(ArrayList<String> csvData) {
+		EngDModel.csvData = csvData;
 	}
 }
 

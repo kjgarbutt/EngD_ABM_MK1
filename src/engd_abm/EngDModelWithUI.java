@@ -1,6 +1,7 @@
 package engd_abm;
 
 import java.awt.Color;
+import java.awt.Graphics2D;
 
 import javax.swing.JFrame;
 
@@ -8,8 +9,11 @@ import sim.display.Console;
 import sim.display.Controller;
 import sim.display.Display2D;
 import sim.display.GUIState;
+import sim.portrayal.DrawInfo2D;
+import sim.portrayal.continuous.ContinuousPortrayal2D;
 import sim.portrayal.geo.GeomPortrayal;
 import sim.portrayal.geo.GeomVectorFieldPortrayal;
+import sim.portrayal.simple.OvalPortrayal2D;
 
 public class EngDModelWithUI extends GUIState {
 
@@ -17,9 +21,11 @@ public class EngDModelWithUI extends GUIState {
 	public Display2D display;
 	public JFrame displayFrame;
 	
+	GeomVectorFieldPortrayal lsoaPortrayal = new GeomVectorFieldPortrayal();
     GeomVectorFieldPortrayal roadsPortrayal = new GeomVectorFieldPortrayal();
     GeomVectorFieldPortrayal flood3Portrayal = new GeomVectorFieldPortrayal();
     GeomVectorFieldPortrayal flood2Portrayal = new GeomVectorFieldPortrayal();
+    ContinuousPortrayal2D agentsPortrayal = new ContinuousPortrayal2D();
 
 	public EngDModelWithUI(EngDModel sim) {
 		super(sim);
@@ -33,9 +39,11 @@ public class EngDModelWithUI extends GUIState {
 		//((Console) c).setLocation(0, 520);
 		display = new Display2D(750, 520, this);
 
+		display.attach(lsoaPortrayal, "LSOA");
 		display.attach(roadsPortrayal, "Roads");
 		display.attach(flood2Portrayal, "Flood Zone #2");
         display.attach(flood3Portrayal, "Flood Zone #3");
+        display.attach(agentsPortrayal, "Agents");
 
 		displayFrame = display.createFrame();
 		c.registerFrame(displayFrame);
@@ -51,6 +59,7 @@ public class EngDModelWithUI extends GUIState {
 		System.out.println("start()");
 		System.out.println("Setting up Portrayals...");
 		setupPortrayals();
+		//setupMovingPortrayals();
 
 	}
 
@@ -70,7 +79,37 @@ public class EngDModelWithUI extends GUIState {
 		flood3Portrayal.setField(engDModelWorld.flood3);
 		flood3Portrayal.setPortrayalForAll(new GeomPortrayal(Color.CYAN, true));
 		System.out.println("Setting up flood3Portrayal...");
+		
+		lsoaPortrayal.setField(engDModelWorld.lsoa);
+		lsoaPortrayal.setPortrayalForAll(new GeomPortrayal
+        		(Color.LIGHT_GRAY, 0.0005, false));
+		System.out.println("Setting up lsoaPortrayal...");
 	}
+	
+	/*
+	public void setupMovingPortrayals() {
+		agentsPortrayal.setField(((EngDModel) this.state).world);
+		agentsPortrayal.setPortrayalForAll(new OvalPortrayal2D() {
+			@Override
+			public void draw(Object object, Graphics2D graphics, DrawInfo2D info) {
+
+				EngDAgent agents = (EngDAgent) object;
+				if (agents.getStatus() == EngDConstants.DEAD)
+					paint = Color.RED;
+				else
+					paint = Color.GREEN;
+				// super.draw(object, graphics, info);
+				super.filled = true;
+				super.scale = 5;
+				super.draw(object, graphics, info);
+			}
+		});
+
+		display.reset();
+		display.setBackdrop(Color.WHITE);
+		display.repaint();
+	}
+	*/
 
 	@Override
 	public void quit() {
