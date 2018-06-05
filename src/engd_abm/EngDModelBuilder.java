@@ -10,11 +10,15 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Random;
 
 import sim.field.geo.GeomVectorField;
+import sim.field.grid.SparseGrid2D;
 import sim.field.network.Network;
 import sim.io.geo.ShapeFileImporter;
+import sim.util.Bag;
+import sim.util.Int2D;
 import sim.util.geo.GeomPlanarGraph;
 import sim.util.geo.GeomPlanarGraphEdge;
 import sim.util.geo.MasonGeometry;
@@ -43,40 +47,66 @@ class EngDModelBuilder {
 	public MersenneTwisterFast random;
 
 	public static void initializeWorld(EngDModel sim) {
-
-		System.out.println("Initializing model world...");
+		System.out.println("Model initializing...");
 		engdModelSim = sim;
+
+		String[] boundaryAttributes = { "NAME", "AREA_CODE", "DESCRIPTIO",
+				"FILE_NAME", "NUMBER", "NUMBER0", "POLYGON_ID", "UNIT_ID",
+				"CODE", "HECTARES", "AREA", "TYPE_CODE", "DESCRIPT0",
+				"TYPE_COD0", "DESCRIPT1" };
+		String[] lsoaAttributes = { "ID", "LSOA_CODE", "LSOA_NAME", 
+				"LA_NAME", "MSOA_CODE", "MSOA_NAME", "GOR_NAME", 
+				"CFSL", "CFSN" };
+		String[] roadAttributes = { "JOIN_FID", "fictitious", "identifier",
+				"roadNumber", "name1", "formOfWay", "length", "primary",
+				"trunkRoad", "loop", "startNode", "endNode", "nameTOID",
+				"numberTOID", "function", "objectid", "st_areasha",
+				"st_lengths", "Shape_Leng", "GOR_Name", "GOR_Code",
+				"MSOA_Name", "MSOA_Code", "LA_Name", "LA_Code", "LSOA_Name",
+				"LSOA_Code", "ROAD_ID_1" };
+		String[] flood2Attributes = { "TYPE", "LAYER" };
+		String[] flood3Attributes = { "TYPE", "LAYER" };
 
 		engdModelSim.world_height = 500;
 		engdModelSim.world_width = 500;
 
 		engdModelSim.boundary = new GeomVectorField(sim.world_width,
 				sim.world_height);
+		Bag boundaryAtt = new Bag(boundaryAttributes);
+		System.out.println("	Boundary shapefile: " + EngDParameters.BOUNDARY_SHP);
 
-		engdModelSim.lsoa = new GeomVectorField(sim.world_width,
+		engdModelSim.cityPoints = new GeomVectorField(sim.world_width,
 				sim.world_height);
+		Bag lsoaAtt = new Bag(lsoaAttributes);
+		System.out.println("	LSOA shapefile: " + EngDParameters.LSOA_SHP);
 
 		EngDModel.roads = new GeomVectorField(sim.world_width, sim.world_height);
+		Bag roadAtt = new Bag(roadAttributes);
+		System.out.println("	Roads shapefile: " + EngDParameters.ROAD_SHP);
 
 		engdModelSim.flood2 = new GeomVectorField(sim.world_width,
 				sim.world_height);
+		Bag flood2Att = new Bag(flood2Attributes);
+		System.out.println("	Floods 2 shapefile: " + EngDParameters.FLOOD2_SHP);
 
 		engdModelSim.flood3 = new GeomVectorField(sim.world_width,
 				sim.world_height);
-
+		Bag flood3Att = new Bag(flood3Attributes);
+		System.out.println("	Floods 3 shapefile: " + EngDParameters.FLOOD3_SHP);
+		
 		engdModelSim.roadNetwork = new Network();
 
 		String[] shapeFiles = { EngDParameters.LSOA_SHP,
 				EngDParameters.BOUNDARY_SHP, EngDParameters.ROAD_SHP,
 				EngDParameters.FLOOD2_SHP, EngDParameters.FLOOD3_SHP };
-		GeomVectorField[] vectorFields = { engdModelSim.lsoa,
+		Bag[] attfiles = { boundaryAtt, lsoaAtt, roadAtt, flood2Att, flood3Att };
+		GeomVectorField[] vectorFields = { engdModelSim.cityPoints,
 				engdModelSim.boundary, EngDModel.roads, engdModelSim.flood2,
 				engdModelSim.flood3 };
-		System.out.println("Starting to read shapefiles...");
 
-		readInShapefile(shapeFiles, vectorFields);
+		readInShapefile(shapeFiles, attfiles, vectorFields);
 
-		Envelope MBR = engdModelSim.lsoa.getMBR();
+		Envelope MBR = engdModelSim.cityPoints.getMBR();
 		MBR.expandToInclude(engdModelSim.boundary.getMBR());
 		MBR.expandToInclude(EngDModel.roads.getMBR());
 		MBR.expandToInclude(engdModelSim.flood2.getMBR());
@@ -84,12 +114,14 @@ class EngDModelBuilder {
 
 		createNetwork();
 
-		engdModelSim.lsoa.setMBR(MBR);
+		engdModelSim.cityPoints.setMBR(MBR);
 		engdModelSim.boundary.setMBR(MBR);
 		EngDModel.roads.setMBR(MBR);
 		engdModelSim.flood2.setMBR(MBR);
 		engdModelSim.flood3.setMBR(MBR);
 
+		//makeLSOAs(engdModelSim.cityPoints, engdModelSim.lsoas, engdModelSim.lsoaList);
+		
 		try {
 			agentGoals("/GloucestershireAgentGoals.csv");
 			addAgents("/GloucestershireITNAGENT.csv");
@@ -104,17 +136,58 @@ class EngDModelBuilder {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
 	}
 
-	static void readInShapefile(String[] files, GeomVectorField[] vectorFields) {
+	private static void printLSOA() {
+		for (Object lsoa : engdModelSim.lsoas) {
+			EngDLSOA l = (EngDLSOA) lsoa;
+		}
+	}
+/*
+	static void makeLSOAs(GeomVectorField lsoas_vector,Bag addTo, Map<Integer, EngDLSOA> lsoaList) {
+		Bag lsoas = lsoas_vector.getGeometries();
+		Envelope e = lsoas_vector.getMBR();
+		double xmin = e.getMinX(), ymin = e.getMinY(), xmax = e.getMaxX(), ymax = e
+				.getMaxY();
+		int xcols = engdModelSim.world_width - 1, ycols = engdModelSim.world_height - 1;
+		System.out.println("Reading in LSOA attributes...");
+		for (int i = 0; i < lsoas.size(); i++) {
+			MasonGeometry lsoainfo = (MasonGeometry) lsoas.objs[i];
+			Point point = lsoas_vector.getGeometryLocation(lsoainfo);
+			double x = point.getX(), y = point.getY();
+			int xint = (int) Math.floor(xcols * (x - xmin) / (xmax - xmin)), yint = (int) (ycols - Math
+					.floor(ycols * (y - ymin) / (ymax - ymin)));
+			String lsoaname = lsoainfo.getStringAttribute("LSOA_NAME");
+			int ID = lsoainfo.getIntegerAttribute("ID");
+			String lsoacode = lsoainfo.getStringAttribute("LSOA_CODE");
+			String laName = lsoainfo.getStringAttribute("LA_NAME");
+			// int pop = lsoainfo.getIntegerAttribute("POP");
+			// int quota = lsoainfo.getIntegerAttribute("QUOTA_1");
+			int CFSL = lsoainfo.getIntegerAttribute("CFSL");
+			int CFSN = lsoainfo.getIntegerAttribute("CFSN");
+			// double economy = lsoainfo.getDoubleAttribute("ECON_1");
+			// double familyPresence = lsoainfo.getDoubleAttribute("FAMILY_1");
+			Int2D location = new Int2D(xint, yint);
+
+			EngDLSOA lsoa = new EngDLSOA(location, ID, lsoaname, lsoacode, laName,
+					CFSL, CFSN);
+			addTo.add(lsoa);
+			lsoaList.put(ID, lsoa);
+			//grid.setObjectLocation(lsoa, location);
+		}
+	}
+	*/
+
+	static void readInShapefile(String[] files, Bag[] attfiles,
+			GeomVectorField[] vectorFields) {
 		System.out.println("Reading in shapefiles...");
 		try {
 			for (int i = 0; i < files.length; i++) {
+				Bag attributes = attfiles[i];
 				String filePath = files[i];
 				File file = new File(filePath);
 				URL shapeURI = file.toURI().toURL();
-				ShapeFileImporter.read(shapeURI, vectorFields[i]);
+				ShapeFileImporter.read(shapeURI, vectorFields[i], attributes);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -137,7 +210,7 @@ class EngDModelBuilder {
 		String agentFilePath = EngDModel.class.getResource(agentfilename)
 				.getPath();
 		FileInputStream agentfstream = new FileInputStream(agentFilePath);
-		System.out.println("Reading Agent's Goals CSV file: " + agentFilePath);
+		System.out.println("Reading Goals CSV file: " + agentFilePath);
 
 		try {
 			agentGoalsBuffer = new BufferedReader(new InputStreamReader(
@@ -153,11 +226,19 @@ class EngDModelBuilder {
 				csvData.addAll(agentGoalsResult);
 			}
 			System.out.println();
-			System.out.println("Full csvData Array: " + csvData);
+			System.out.println("Agent Goals: " + csvData);
 		} finally {
 			if (agentGoalsBuffer != null)
 				agentGoalsBuffer.close();
 		}
+		Random randomiser = new Random();
+		String random = csvData.get(new Random().nextInt(csvData.size()));
+		// String random1 = csvData.get(new Random().nextInt(csvData.size()));
+		String goalTract = random;
+		// String goalTract1 = random1;
+		System.out.println();
+		System.out.println("RANDOMLY SELECTED GOALTRACT: " + goalTract);
+
 	}
 
 	public ArrayList<String> getList() {
@@ -188,16 +269,18 @@ class EngDModelBuilder {
 						.get(new Random().nextInt(csvData.size()));
 				String goalTract = random;
 				System.out.println();
-				System.out.println("Agent goalTract: " + goalTract);
+				System.out
+						.println("Agent " + ROAD_ID + "'s goal: " + goalTract);
 
 				GeomPlanarGraphEdge startingEdge = idsToEdges.get((int) Double
 						.parseDouble(ROAD_ID));
 				GeomPlanarGraphEdge goalEdge = idsToEdges.get((int) Double
 						.parseDouble(goalTract));
 
-				for (int i = 0; i < numAgents; i++) {
+				for (int i = 0; i < pop; i++) {
 					EngDAgent newEngDAgent = new EngDAgent(engdModelSim,
 							homeTract, goalTract, startingEdge, goalEdge);
+
 					boolean successfulStart = newEngDAgent.start(null);
 
 					if (!successfulStart) {

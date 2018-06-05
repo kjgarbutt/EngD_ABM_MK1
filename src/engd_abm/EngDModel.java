@@ -1,19 +1,22 @@
 package engd_abm;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import sim.engine.Schedule;
 import sim.engine.SimState;
 import sim.field.continuous.Continuous2D;
 import sim.field.geo.GeomVectorField;
 import sim.field.network.Network;
+import sim.util.Bag;
 
 class EngDModel extends SimState {
 	
 	public Continuous2D engdModelSim;
 
 	public Network roadNetwork = new Network();
-	public GeomVectorField lsoa;
+	public GeomVectorField cityPoints;
 	public GeomVectorField boundary;
 	public GeomVectorField osvi;
 	public static GeomVectorField roads;
@@ -35,6 +38,9 @@ class EngDModel extends SimState {
 	public int world_height;
 
 	public long total_pop = 0;
+	
+	public Bag lsoas = new Bag();
+	public Map<Integer, EngDLSOA> lsoaList = new HashMap<>();
 
 	public EngDModel(long seed) {
 		super(seed);
@@ -42,14 +48,13 @@ class EngDModel extends SimState {
 
 	@Override
 	public void start() {
-		System.out.println("Model initializing...");
 		super.start();
 		EngDModelBuilder.initializeWorld(this);
 	}
 
 	@Override
 	public void finish() {
-		System.out.println("Finishing...");
+		System.out.println("Simulation ended by user.");
 		super.finish();
 	}
 

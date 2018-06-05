@@ -50,8 +50,6 @@ public class EngDModelWithUI extends GUIState {
 	@Override
 	public void start() {
 		super.start();
-		System.out.println("start()");
-		System.out.println("Setting up Portrayals...");
 		setupPortrayals();
 
 		EngDModel engdModelSim = (EngDModel) state;
@@ -59,6 +57,7 @@ public class EngDModelWithUI extends GUIState {
 	}
 
 	public void setupPortrayals() {
+		System.out.println("Setting up Portrayals...");
 
 		roadsPortrayal.setField(((EngDModel) this.state).roads);
 		roadsPortrayal.setPortrayalForAll(new GeomPortrayal(Color.DARK_GRAY,

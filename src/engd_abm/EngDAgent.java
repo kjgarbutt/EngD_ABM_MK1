@@ -23,7 +23,7 @@ public final class EngDAgent implements Steppable {
 	Node headquartersNode = null;
 	Node lsoaNode = null;
 	private MasonGeometry location;
-	static int agentSpeed = 0;
+	static int agentSpeed = 10;
 	private LengthIndexedLine segment = null;
 	double startIndex = 0.0; // start position of current line
 	double endIndex = 0.0; // end position of current line
@@ -51,9 +51,9 @@ public final class EngDAgent implements Steppable {
 				geometryFactory.createPoint(new Coordinate(10, 10)));
 		location.isMovable = true;
 
-		setAgentSpeed((int) (Math.random() * 70) + 1);
-		System.out.println("Agent's MoveRate = " + getAgentSpeed());
-		location.addDoubleAttribute("MOVE RATE", getAgentSpeed());
+		//setAgentSpeed((int) (Math.random() * 70) + 1);
+		//System.out.println("Agent's MoveRate = " + getAgentSpeed());
+		//location.addDoubleAttribute("MOVE RATE", getAgentSpeed());
 
 		Coordinate startCoord = null;
 		startCoord = headquartersNode.getCoordinate();
@@ -108,27 +108,29 @@ public final class EngDAgent implements Steppable {
 			System.out.println(this + "'s 'segment'"
 					+ "is NULL. For some reason!");
 			return;
-		} else if (reachedGoal) {
-			return;
-		}
-		boolean toWork = ((EngDModel) state).goToLSOA;
-		if ((toWork && pathDirection < 0) || (!toWork && pathDirection > 0)) {
-			flipPath();
-		}
-		speed = progress(getAgentSpeed());
-		currentIndex += speed;
-
-		if (linkDirection == 1 && currentIndex > endIndex) {
-			Coordinate currentPos = segment.extractPoint(endIndex);
-			updatePosition(currentPos);
-			transitionToNextEdge(currentIndex - endIndex);
-		} else if (linkDirection == -1 && currentIndex < startIndex) {
-			Coordinate currentPos = segment.extractPoint(startIndex);
-			updatePosition(currentPos);
-			transitionToNextEdge(startIndex - currentIndex);
-		} else {
-			Coordinate currentPos = segment.extractPoint(currentIndex);
-			updatePosition(currentPos);
+		} else if (reachedGoal)	{
+	    	   boolean toWork = ((EngDModel) state).goToLSOA;
+	    	   if ((toWork && pathDirection < 0) || (!toWork && pathDirection > 0))	{
+	           flipPath();
+	           speed = progress(agentSpeed);
+	           currentIndex += speed;
+		       if (linkDirection == 1 && currentIndex > endIndex)	{
+		           Coordinate currentPos = segment.extractPoint(endIndex);
+		           updatePosition(currentPos);
+		           transitionToNextEdge(currentIndex - endIndex);
+		       // ELSE IF 1 is SAME as -1 AND currentIndex LESS THAN startIndex
+		      		// THEN move to the nextEdge (startIndex - currentIndex)   
+		       } else if (linkDirection == -1 && currentIndex < startIndex)	{
+		           Coordinate currentPos = segment.extractPoint(startIndex);
+		           updatePosition(currentPos);
+		           transitionToNextEdge(startIndex - currentIndex);
+		       } else
+		       {
+		    	   // just update the position!
+		           Coordinate currentPos = segment.extractPoint(currentIndex);
+		           updatePosition(currentPos);
+		           }
+	    	   }
 		}
 	}
 
