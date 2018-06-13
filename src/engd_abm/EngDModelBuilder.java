@@ -139,8 +139,8 @@ class EngDModelBuilder {
 	}
 
 	private static void printLSOA() {
-		for (Object lsoa : engdModelSim.lsoas) {
-			EngDLSOA l = (EngDLSOA) lsoa;
+		for (Object city : engdModelSim.lsoas) {
+			Node c = (Node) city;
 		}
 	}
 /*

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import sim.engine.SimState;
 import sim.engine.Steppable;
+import sim.util.Int2D;
 import sim.util.geo.GeomPlanarGraphDirectedEdge;
 import sim.util.geo.GeomPlanarGraphEdge;
 import sim.util.geo.MasonGeometry;
@@ -17,12 +18,18 @@ import com.vividsolutions.jts.planargraph.Node;
 
 public final class EngDAgent implements Steppable {
 
+	private int age;
+	private int sex; // 0 male, 1 female
+	private EngDNGOTeam family;
+	private Int2D location;
+	private int healthStatus = 1; // default 1 (alive), dead 0
+
 	EngDModel world;
 	String homeTract = "";
 	String workTract = "";
 	Node headquartersNode = null;
 	Node lsoaNode = null;
-	private MasonGeometry location;
+	private MasonGeometry locationGeom;
 	static int agentSpeed = 10;
 	private LengthIndexedLine segment = null;
 	double startIndex = 0.0; // start position of current line
@@ -47,9 +54,9 @@ public final class EngDAgent implements Steppable {
 		workTract = work;
 
 		GeometryFactory geometryFactory = new GeometryFactory();
-		location = new MasonGeometry(
+		locationGeom = new MasonGeometry(
 				geometryFactory.createPoint(new Coordinate(10, 10)));
-		location.isMovable = true;
+		locationGeom.isMovable = true;
 
 		//setAgentSpeed((int) (Math.random() * 70) + 1);
 		//System.out.println("Agent's MoveRate = " + getAgentSpeed());
@@ -59,6 +66,39 @@ public final class EngDAgent implements Steppable {
 		startCoord = headquartersNode.getCoordinate();
 		updatePosition(startCoord);
 	}
+	
+	public int getHealthStatus() {
+		return healthStatus;
+	}
+
+	public void setHealthStatus(int status) {
+		this.healthStatus = status;
+	}
+
+	public int getAge() {
+		return age;
+	}
+
+	public void setAge(int age) {
+		this.age = age;
+	}
+	
+	public Int2D getLocation() {
+		return location;
+	}
+
+	public void setLocation(Int2D location) {
+		this.location = location;
+	}
+
+	public int getSex() {
+		return sex;
+	}
+
+	public void setSex(int sex) {
+		this.sex = sex;
+	}
+
 
 	public boolean start(EngDModelBuilder engdModelSim) {
 		findNewAStarPath(engdModelSim);
@@ -74,14 +114,14 @@ public final class EngDAgent implements Steppable {
 	}
 
 	private void findNewAStarPath(EngDModelBuilder geoTest) {
-		Node currentJunction = geoTest.network.findNode(location.geometry
+		Node currentJunction = geoTest.network.findNode(locationGeom.geometry
 				.getCoordinate());
 		Node destinationJunction = lsoaNode;
 		if (currentJunction == null) {
 			return;
 		}
 
-		EngDAStar pathfinder = new EngDAStar();
+		AStar pathfinder = new AStar();
 		ArrayList<GeomPlanarGraphDirectedEdge> path = pathfinder.astarPath(
 				currentJunction, destinationJunction);
 
@@ -184,8 +224,8 @@ public final class EngDAgent implements Steppable {
 		linkDirection = 1;
 
 		double distanceToStart = line.getStartPoint().distance(
-				location.geometry), distanceToEnd = line.getEndPoint()
-				.distance(location.geometry);
+				locationGeom.geometry), distanceToEnd = line.getEndPoint()
+				.distance(locationGeom.geometry);
 		if (distanceToStart <= distanceToEnd) { // closer to start
 			currentIndex = startIndex;
 			linkDirection = 1;
@@ -201,7 +241,7 @@ public final class EngDAgent implements Steppable {
 	}
 
 	public MasonGeometry getGeometry() {
-		return location;
+		return locationGeom;
 	}
 
 	public static int getAgentSpeed() {

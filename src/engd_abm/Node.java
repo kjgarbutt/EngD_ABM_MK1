@@ -5,10 +5,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.planargraph.DirectedEdgeStar;
+
 import sim.util.Bag;
 import sim.util.Int2D;
 
-class EngDLSOA {
+class Node {
 	Int2D location;
 	String name;
 	private int quota; // 1
@@ -24,10 +27,11 @@ class EngDLSOA {
 	private int arrivals;
 
 	// need name, get name, set name
-	//private MigrationBuilder.Node nearestNode;
-	protected HashMap<EngDLSOA, EngDRoute> cachedPaths;
+	// private MigrationBuilder.Node nearestNode;
+	protected HashMap<Node, Route> cachedPaths;
 
-	public EngDLSOA(Int2D location, int ID, String name, int origin, double scaledPop, int pop, int quota, double violence,
+	// links to cityAttributes read in in MigrationBuilder.java
+	public Node(Int2D location, int ID, String name, int origin, double scaledPop, int pop, int quota, double violence,
 			double economy, double familyPresence) {
 		this.name = name;
 		this.location = location;
@@ -41,11 +45,6 @@ class EngDLSOA {
 		this.origin = origin;
 		this.agents = new HashSet<EngDAgent>();
 		this.departures = 0;
-	}
-
-	public EngDLSOA(Int2D location2, int iD2, String name2, String code,
-			String laName, int cFSL, int cFSN) {
-		// TODO Auto-generated constructor stub
 	}
 
 	public Int2D getLocation() {
@@ -119,15 +118,15 @@ class EngDLSOA {
 	public void setEconomy(double economy) {
 		this.economy = economy;
 	}
-	
+
 	public int getDepartures(){
 		return departures;
 	}
-	
+
 	public int getArrivals(){
 		return arrivals;
 	}
-	
+
 	public double getFamilyPresence() {
 		return familyPresence;
 	}
@@ -140,18 +139,18 @@ class EngDLSOA {
 		refugees.addAll(people);
 	}*/
 
-	public void addMember(EngDAgent a) {
-		agents.add(a);
+	public void addAgent(EngDAgent r) {
+		agents.add(r);
 		arrivals++;
 	}
-	
+
 	/*public void removeMembers(Bag people){
 		refugees.remove(people);
 		passerbyCount += people.size();
 	}*/
-	
-	public void removeMember(EngDAgent a){
-		if (agents.remove(a))				
+
+	public void removeAgent(EngDAgent r){
+		if (agents.remove(r))
 			departures ++;
 	}
 
@@ -167,22 +166,23 @@ class EngDLSOA {
 		cachedPaths.put(destination, route);
 	}*/
 
-	public Map<EngDLSOA, EngDRoute> getCachedRoutes() {
+	public Map<Node, Route> getCachedRoutes() {
 		return cachedPaths;
 	}
 
-	public EngDRoute getRoute(EngDLSOA destination, EngDNGOAgent refugeeFamily) {
-		EngDRoute route;
+	public Route getRoute(Node destination, EngDNGOTeam refugeeFamily) {
+		Route route;
 
-		route = EngDAStar.astarPath(this, destination, refugeeFamily);
+		route = AStar.astarPath(this, destination, refugeeFamily);
 		//System.out.println(route.getNumSteps());
 
 		return route;
 	}
-	
+
 	public double getScale(){
 		return agents.size() * 1.0 / (EngDParameters.TOTAL_POP);
 	}
+
 	
 
 }

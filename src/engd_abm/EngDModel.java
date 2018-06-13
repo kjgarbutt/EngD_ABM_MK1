@@ -40,7 +40,7 @@ class EngDModel extends SimState {
 	public long total_pop = 0;
 	
 	public Bag lsoas = new Bag();
-	public Map<Integer, EngDLSOA> lsoaList = new HashMap<>();
+	public Map<Integer, Node> cityList = new HashMap<>();
 
 	public EngDModel(long seed) {
 		super(seed);
