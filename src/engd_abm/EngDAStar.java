@@ -1,9 +1,11 @@
 package engd_abm;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 
 import sim.field.network.Edge;
@@ -17,28 +19,25 @@ import com.vividsolutions.jts.planargraph.Node;
 
 import ec.util.MersenneTwisterFast;
 
-/**
- * AStar.java
- *
- * Copyright 2011 by Sarah Wise, Mark Coletti, Andrew Crooks, and
- * George Mason University.
- *
- * Licensed under the Academic Free License version 3.0
- *
- * See the file "LICENSE" for more information
- *
- * $Id: AStar.java 842 2012-12-18 01:09:18Z mcoletti $
- */
-public class AStar {
+@SuppressWarnings("restriction")
+public class EngDAStar {
 	
+	/**
+	 * Assumes that both the start and end location are Cities as opposed to
+	 * LOCATIONS
+	 * 
+	 * @param start
+	 * @param goal
+	 * @return
+	 */
 	public static Network roadNetwork = EngDModelBuilder.engdModelSim.roadNetwork;
 	public static MersenneTwisterFast random = new MersenneTwisterFast();
 
 	//public ArrayList<GeomPlanarGraphDirectedEdge> astarPath(Node start, Node goal, EngDNGOTeam refugeeFamily)	{
-	static public <Route> Route astarPath(Node engDLSOA, Node goal, EngDNGOTeam refugee)	{
+	static public EngDRoute engdAstarPath(Node node, Node destination, EngDNGOTeam ngoagent)	{
         // initial check
     	long startTime = System.currentTimeMillis();
-        if (engDLSOA == null || goal == null)	{
+        if (node == null || destination == null)	{
             System.out.println("Error: invalid node provided to AStar");
         }
 
@@ -51,14 +50,14 @@ public class AStar {
         HashMap<Node, AStarNodeWrapper> foundNodes =
             new HashMap<Node, AStarNodeWrapper>();
 
-        AStarNodeWrapper startNode = new AStarNodeWrapper(engDLSOA);
-        AStarNodeWrapper goalNode = new AStarNodeWrapper(goal);
-        foundNodes.put(engDLSOA, startNode);
-        foundNodes.put(goal, goalNode);
+        AStarNodeWrapper startNode = new AStarNodeWrapper(node);
+        AStarNodeWrapper goalNode = new AStarNodeWrapper(destination);
+        foundNodes.put(node, startNode);
+        foundNodes.put(destination, goalNode);
 
         startNode.gx = 0;
-        startNode.hx = heuristic(engDLSOA, goal);
-        startNode.fx = heuristic(engDLSOA, goal);
+        startNode.hx = heuristic(node, destination);
+        startNode.fx = heuristic(node, destination);
 
         // A* containers: nodes to be investigated, nodes that have been investigated
         HashSet<AStarNodeWrapper> closedSet = new HashSet<>(10000), openSet = new HashSet<>(10000);
@@ -70,10 +69,10 @@ public class AStar {
         	// while there are reachable nodes to investigate
             AStarNodeWrapper x = findMin(openSet);
             // find the shortest path so far
-            if (x.node == goal)	{
+            if (x.node == destination)	{
             	// we have found the shortest possible path to the goal!
                 // Reconstruct the path and send it back.
-                return reconstructRoute(goalNode, startNode, goalNode, refugee);
+                return reconstructRoute(goalNode, startNode, goalNode, ngoagent);
             }
             openSet.remove(x);
             // maintain the lists
@@ -106,7 +105,7 @@ public class AStar {
 
                 if (!openSet.contains(nextNode))	{
                     openSet.add(nextNode);
-                    nextNode.hx = heuristic(next, goal);
+                    nextNode.hx = heuristic(next, destination);
                     better = true;
                 } else if (tentativeCost < nextNode.gx)	{
                     better = true;
@@ -123,8 +122,7 @@ public class AStar {
         }
         return null;
     }
-    
-    
+
     /**
 	 * Takes the information about the given City n and returns the path that
 	 * found it.
@@ -135,8 +133,8 @@ public class AStar {
 	//ArrayList<GeomPlanarGraphDirectedEdge> reconstructPath(AStarNodeWrapper n)	
 	//ArrayList<GeomPlanarGraphDirectedEdge> result =
     	//new ArrayList<GeomPlanarGraphDirectedEdge>();
-	static Route reconstructRoute(AStarNodeWrapper n, AStarNodeWrapper start, AStarNodeWrapper end,
-			EngDNGOTeam agent) {
+	static EngDRoute reconstructRoute(AStarNodeWrapper n, AStarNodeWrapper start, AStarNodeWrapper end,
+			EngDNGOTeam ngoagent) {
 		//In EngD: new ArrayList<GeomPlanarGraphDirectedEdge>();
 		List<Int2D> locations = new ArrayList<Int2D>(100);
 		List<Edge> edges = new ArrayList<Edge>(100);
@@ -202,7 +200,7 @@ public class AStar {
 		//locations.add(0, start.city.location);
 		edges.add(0, edge);
 		//In EngD: return result;
-		return new Route(locations, edges, totalDistance, start.node, end.node, EngDParameters.WALKING_SPEED);
+		return new EngDRoute(locations, edges, totalDistance, start.node, end.node, EngDParameters.WALKING_SPEED);
 		//return new Route(locations, totalDistance, start.city, end.city, Parameters.WALKING_SPEED);
 	}
 
@@ -228,12 +226,16 @@ public class AStar {
      * @return notional "distance" between the given nodes.
      */
     static double heuristic(Node x, Node y)	{
+		return x.location.distance(y.location) * EngDParameters.HEU_WEIGHT;
+	/*
+	 * FROM EngD:
+	 * double heuristic(Node x, Node y)	{
         Coordinate xnode = x.getCoordinate();
         Coordinate ynode = y.getCoordinate();
         return Math.sqrt(Math.pow(xnode.x - ynode.x, 2)
             + Math.pow(xnode.y - ynode.y, 2));
-     //static double heuristic(City x, City y) {
-    		//return x.location.distance(y.location) * Parameters.HEU_WEIGHT;
+	 */
+	
     }
 
     /**
@@ -248,7 +250,6 @@ public class AStar {
             + Math.pow(xnode.y - ynode.y, 2));
     }
     
-
     /**
      *  //////////////////////// Nodes to Consider ///////////////////////////////
      *  Considers the list of Nodes open for consideration and returns the node
@@ -256,8 +257,8 @@ public class AStar {
      * @param openSet list of open Nodes
      * @return
      */
-    static AStarNodeWrapper findMin(HashSet<AStarNodeWrapper> openSet)	{
-        double min = 100000;
+    static AStarNodeWrapper findMin(Collection<AStarNodeWrapper> openSet)	{
+    	double min = Double.MAX_VALUE;	//double min = 100000;
         AStarNodeWrapper minNode = null;
         for (AStarNodeWrapper n : openSet)	{
             if (n.fx < min)	{
@@ -283,8 +284,8 @@ public class AStar {
         GeomPlanarGraphDirectedEdge edgeFrom;
         double gx, hx, fx;
 
-        public AStarNodeWrapper(Node engDLSOA)	{
-            node = engDLSOA;
+        public AStarNodeWrapper(Node node2)	{
+            node = node2;
             gx = 0;
             hx = 0;
             fx = 0;

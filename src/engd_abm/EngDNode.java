@@ -22,13 +22,13 @@ class Node {
 	private double violence; // 2
 	private double economy; // 3
 	private double familyPresence; // 2
-	private HashSet<EngDAgent> agents;
+	private HashSet<EngDAgent> ngoagents;
 	private int departures;
 	private int arrivals;
 
 	// need name, get name, set name
 	// private MigrationBuilder.Node nearestNode;
-	protected HashMap<Node, Route> cachedPaths;
+	protected HashMap<Node, EngDRoute> cachedPaths;
 
 	// links to cityAttributes read in in MigrationBuilder.java
 	public Node(Int2D location, int ID, String name, int origin, double scaledPop, int pop, int quota, double violence,
@@ -43,7 +43,7 @@ class Node {
 		this.economy = economy;
 		this.familyPresence = familyPresence;
 		this.origin = origin;
-		this.agents = new HashSet<EngDAgent>();
+		this.ngoagents = new HashSet<EngDAgent>();
 		this.departures = 0;
 	}
 
@@ -80,11 +80,11 @@ class Node {
 	}
 
 	public int getRefugeePopulation() {
-		return agents.size();
+		return ngoagents.size();
 	}
 
-	public HashSet<EngDAgent> getRefugees() {
-		return agents;
+	public HashSet<EngDAgent> getNGOAgents() {
+		return ngoagents;
 	}
 
 	public int getQuota() {
@@ -140,7 +140,7 @@ class Node {
 	}*/
 
 	public void addAgent(EngDAgent r) {
-		agents.add(r);
+		ngoagents.add(r);
 		arrivals++;
 	}
 
@@ -150,7 +150,7 @@ class Node {
 	}*/
 
 	public void removeAgent(EngDAgent r){
-		if (agents.remove(r))
+		if (ngoagents.remove(r))
 			departures ++;
 	}
 
@@ -166,21 +166,22 @@ class Node {
 		cachedPaths.put(destination, route);
 	}*/
 
-	public Map<Node, Route> getCachedRoutes() {
+	public Map<Node, EngDRoute> getCachedRoutes() {
 		return cachedPaths;
 	}
 
-	public Route getRoute(Node destination, EngDNGOTeam refugeeFamily) {
-		Route route;
+	public EngDRoute getRoute(Node destination, EngDNGOTeam ngoAgentTeam) {
+		EngDRoute engdroute;
 
-		route = AStar.astarPath(this, destination, refugeeFamily);
+		engdroute = EngDAStar.engdAstarPath(this, destination, ngoAgentTeam);
+		//route = EngDAStar.astarPath(Node start, Node goal, EngDNGOTeam ngoagent)
 		//System.out.println(route.getNumSteps());
 
-		return route;
+		return engdroute;
 	}
 
 	public double getScale(){
-		return agents.size() * 1.0 / (EngDParameters.TOTAL_POP);
+		return ngoagents.size() * 1.0 / (EngDParameters.TOTAL_POP);
 	}
 
 	

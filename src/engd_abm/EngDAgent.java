@@ -16,7 +16,7 @@ import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.linearref.LengthIndexedLine;
 import com.vividsolutions.jts.planargraph.Node;
 
-public final class EngDAgent implements Steppable {
+class EngDAgent implements Steppable {
 
 	private int age;
 	private int sex; // 0 male, 1 female
@@ -64,7 +64,7 @@ public final class EngDAgent implements Steppable {
 
 		Coordinate startCoord = null;
 		startCoord = headquartersNode.getCoordinate();
-		updatePosition(startCoord);
+		//updatePosition(startCoord);
 	}
 	
 	public int getHealthStatus() {
@@ -99,7 +99,6 @@ public final class EngDAgent implements Steppable {
 		this.sex = sex;
 	}
 
-
 	public boolean start(EngDModelBuilder engdModelSim) {
 		findNewAStarPath(engdModelSim);
 		if (pathFromHQToLSOA.isEmpty()) {
@@ -121,8 +120,8 @@ public final class EngDAgent implements Steppable {
 			return;
 		}
 
-		AStar pathfinder = new AStar();
-		ArrayList<GeomPlanarGraphDirectedEdge> path = pathfinder.astarPath(
+		EngDAStar pathfinder = new EngDAStar();
+		ArrayList<GeomPlanarGraphDirectedEdge> path = pathfinder.engdAstarPath(
 				currentJunction, destinationJunction);
 
 		if (path != null && path.size() > 0) {
@@ -251,4 +250,5 @@ public final class EngDAgent implements Steppable {
 	public void setAgentSpeed(int agentSpeed) {
 		this.agentSpeed = agentSpeed;
 	}
+
 }

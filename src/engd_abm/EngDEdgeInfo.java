@@ -1,4 +1,4 @@
-package engd_abm_mk1;
+package engd_abm;
 
 import sim.util.Int2D;
 

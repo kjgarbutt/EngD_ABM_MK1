@@ -1,11 +1,10 @@
 package engd_abm;
 
-import sim.field.network.Edge;
-import sim.util.Int2D;
-
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
+
+import sim.field.network.Edge;
+import sim.util.Int2D;
 
 
 
@@ -13,15 +12,15 @@ import java.util.List;
  * This class is a wrapper class for an ArrayList that manages a locations and other
  * information
  */
-public class Route {
+public class EngDRoute {
 	private List<Int2D> locations;// list of places this person needs to go
 	private List<Edge> edges;
 	private double distance;
-	private City start;
-	private City end;
+	private Node start;
+	private Node end;
 	private double speed;
 
-	public Route(List<Int2D> locations, List<Edge> edges, double distance, City start, City end, double speed) {
+	public EngDRoute(List<Int2D> locations, List<Edge> edges, double distance, Node start, Node end, double speed) {
 		this.locations = locations;
 		this.edges = edges;
 		this.distance = distance;
@@ -30,7 +29,7 @@ public class Route {
 		this.speed = speed;
 	}
 	
-	public Route(List<Int2D> locations, double distance, City start, City end, double speed) {
+	public EngDRoute(List<Int2D> locations, double distance, Node start, Node end, double speed) {
 		this.locations = locations;
 		//this.edges = edges;
 		this.distance = distance;
@@ -64,7 +63,7 @@ public class Route {
 		return locations.lastIndexOf(loc);
 	}
 	
-	public int getEdgeIndex(RoadInfo edge) {
+	public int getEdgeIndex(EngDRoadInfo edge) {
 		return edges.lastIndexOf(edge);
 	}
 
@@ -80,15 +79,15 @@ public class Route {
 		return edges.size();
 	}
 
-	public City getStart() {
+	public Node getStart() {
 		return start;
 	}
 
-	public City getEnd() {
+	public Node getEnd() {
 		return end;
 	}
 	
-	public boolean equals(Route r){
+	public boolean equals(EngDRoute r){
 		if (locations.containsAll(r.getLocations()) && edges.containsAll(r.getEdges())){
 			return true;
 		}
@@ -98,19 +97,19 @@ public class Route {
 	
 	public void printRoute(){
 		for (Edge e: edges){
-			City c = (City) e.getTo();
+			Node c = (Node) e.getTo();
 			System.out.print(c.getName() + " ");
 		}
 	}
 
-	public Route reverse() {
+	public EngDRoute reverse() {
 		List<Int2D> reversedlocations = new ArrayList<Int2D>(locations.size());
 		List<Edge> reversedEdges = new ArrayList<Edge>(edges.size());
 		for (int i = locations.size() - 1; i >= 0; i--){
 			reversedlocations.add(locations.get(i));
 			reversedEdges.add(edges.get(i));
 		}
-		return new Route(reversedlocations, reversedEdges, this.distance, this.end, this.start, speed);
+		return new EngDRoute(reversedlocations, reversedEdges, this.distance, this.end, this.start, speed);
 		//return new Route(reversedlocations,  this.distance, this.end, this.start, speed);
 	}
 

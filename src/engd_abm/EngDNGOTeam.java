@@ -18,7 +18,7 @@ import sim.util.Int2D;
 class EngDNGOTeam implements Steppable {
 	private Int2D location;
 	private Bag familyMembers;
-	private Route engdroute;
+	private EngDRoute engdroute;
 	private int routePosition;
 	private double finStatus;
 	private Node home;
@@ -27,7 +27,7 @@ class EngDNGOTeam implements Steppable {
 	private Node goal;
 	static MersenneTwisterFast random = new MersenneTwisterFast();
 	private boolean isMoving;
-	private HashMap<Route, Integer> cachedRoutes;
+	private HashMap<EngDRoute, Integer> cachedRoutes;
 	private HashMap<Node, Integer> cachedGoals;
 	private boolean goalChanged;
 
@@ -40,7 +40,7 @@ class EngDNGOTeam implements Steppable {
 		currentLsoa = home;
 		isMoving = true;
 		// routePosition = 0;
-		cachedRoutes = new HashMap<Route, Integer>();
+		cachedRoutes = new HashMap<EngDRoute, Integer>();
 		goalChanged = false;
 	}
 
@@ -198,8 +198,8 @@ class EngDNGOTeam implements Steppable {
 		// this.routePosition = 0;
 	}
 
-	private Route calcRoute(Node from, Node to) {
-		Route newRoute = from.getRoute(to, this);
+	private EngDRoute calcRoute(Node from, Node to) {
+		EngDRoute newRoute = from.getRoute(to, this);
 		// if there's a route that contains this route
 		// access it and see if decided not to use it before
 		// use new route if old one changed mind, keep label as good
@@ -237,15 +237,15 @@ class EngDNGOTeam implements Steppable {
 		}
 	}
 
-	public static void determineDeath(EngDRoadInfo edge, EngDNGOTeam refugee) {
+	public static void determineDeath(EngDRoadInfo edge, EngDNGOTeam ngoagent) {
 		double deaths = edge.getDeaths() * EngDParameters.ROAD_DEATH_PROB;
 		double rand = random.nextDouble();
 		if (rand < deaths) {// first family member dies (for now)
-			if (refugee.getFamily().size() != 0) {
-				EngDAgent r = (EngDAgent) refugee.getFamily().get(0);
+			if (ngoagent.getFamily().size() != 0) {
+				EngDAgent r = (EngDAgent) ngoagent.getFamily().get(0);
 				r.setHealthStatus(0);
-				refugee.getFamily().remove(0);
-				refugee.currentLsoa.getRefugees().remove(r);
+				ngoagent.getFamily().remove(0);
+				ngoagent.currentLsoa.getNGOAgents().remove(r);
 			}
 		}
 

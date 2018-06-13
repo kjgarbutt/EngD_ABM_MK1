@@ -12,12 +12,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
-
+import sim.field.continuous.Continuous2D;
 import sim.field.geo.GeomVectorField;
 import sim.field.grid.SparseGrid2D;
 import sim.field.network.Network;
 import sim.io.geo.ShapeFileImporter;
 import sim.util.Bag;
+import sim.util.Double2D;
 import sim.util.Int2D;
 import sim.util.geo.GeomPlanarGraph;
 import sim.util.geo.GeomPlanarGraphEdge;
@@ -244,8 +245,8 @@ class EngDModelBuilder {
 	public ArrayList<String> getList() {
 		return csvData;
 	}
-
-	static void addAgents(String filename) {
+	
+static void addAgents(String filename) {
 		try {
 			String filePath = EngDModelBuilder.class.getResource(filename)
 					.getPath();
