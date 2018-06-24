@@ -48,23 +48,6 @@ class EngDNGOTeam implements Steppable {
 		Bag centroids = engdModelSim.lsoacentroids;
 		Centroid goalCentroid = calcGoalLSOA(centroids);
 
-		// if (this.goal.getName().compareTo(goalCity.getName()) != 0)
-		// System.out.println("Goal Changed");
-		// if (goalCity.getName().compareTo("London") != 0 ||
-		// goalCity.getName().compareTo("Munich") != 0)
-		// System.out.println("Different");
-
-		/*
-		 * for (Object c : cities) { City city = (City) c; if (this.location ==
-		 * city.getLocation()) { //if at a city, set current city to that city
-		 * (keep until reach new city) currentCity = city; RoadInfo edgeinfo =
-		 * (RoadInfo) this.currentEdge.getInfo(); this.finStatus -=
-		 * edgeinfo.getCost();//if at the end of an edge, subtract the money for
-		 * (Object o: this.familyMembers){ Refugee r = (Refugee)o;
-		 * city.addMember(r); } } else{ for (Object o: this.familyMembers){
-		 * Refugee r = (Refugee)o; city.getRefugees().remove(r); } } }
-		 */
-
 		if (this.location == goalCentroid.location) {									// == 'Equal to'
 			goal = goalCentroid;
 			isMoving = false;
@@ -219,19 +202,13 @@ class EngDNGOTeam implements Steppable {
 	}
 
 	public void updatePositionOnMap(EngDModel engdModelSim) {
-		// migrationSim.world.setObjectLocation(this.getFamily(), new
-		// Double2D(location.getX() , location.getY() ));
-		for (Object o : this.getTeam()) {
+			for (Object o : this.getTeam()) {
 			EngDAgent r = (EngDAgent) o;
-			double randX = 0;// migrationSim.random.nextDouble() * 0.3;
-			double randY = 0;// migrationSim.random.nextDouble() * 0.3;
-			// System.out.println("Location: " + location.getX() + " " +
-			// location.getY());
+			double randX = 0;
+			double randY = 0;
 			engdModelSim.world.setObjectLocation(r,
 					new Double2D(location.getX() + randX / 10, location.getY()
 							+ randY / 10));
-			// migrationSim.worldPopResolution.setObjectLocation(this,
-			// (int)location.getX()/10, (int)location.getY()/10);
 		}
 	}
 

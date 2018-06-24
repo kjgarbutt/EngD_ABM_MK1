@@ -88,15 +88,6 @@ public class EngDAStar {
 			// maintain the lists
 			openSetQueue.remove();	//new
 			closedSet.add(x);
-
-			// check all the neighbors of this location
-			/*	Following in EngD:
-			 * 	DirectedEdgeStar des = x.node.getOutEdges();
-            	for (Object o : des.getEdges().toArray())	{
-                	GeomPlanarGraphDirectedEdge l = (GeomPlanarGraphDirectedEdge) o;
-                	Node next = null;
-                	next = l.getToNode();
-			 */
 			Bag edges = roadNetwork.getEdgesOut(x.city);
 			for (Object l : edges) {
 				Edge e = (Edge) l;
@@ -116,8 +107,6 @@ public class EngDAStar {
 				if (closedSet.contains(nextCentroid)) // it has already been considered
 					continue;
 
-				/////////////////////////////////////////////////////
-				// ALL NEW: /////////////////////////////////////////
 				// otherwise evaluate the cost of this City/edge combo
 				EngDRoadInfo edge = (EngDRoadInfo) e.getInfo();
 				// System.out.println(edge.getWeightedDistance());
@@ -128,13 +117,11 @@ public class EngDAStar {
 						+ edge.getDeaths() * EngDParameters.RISK_WEIGHT * team.dangerCare();
 				// edgeweight = getWeightedDistance * 0.1
 				//+ 1 * 0.1 -
-				/////////////////////////////////////////////////////
 				
 				System.out.println(edge.getScaledPopulation());
 				System.out.println("gx: " + x.gx + " edgeweight: " + edgeweight);
 				double tentativeCost = x.gx + edgeweight; // changed from integer, still need to change the weighting of the edge weight
 				boolean better = false;
-				//Same as in EngD:
 				if (!openSet.contains(nextCentroid)) {
 					openSet.add(nextCentroid);
 					openSetQueue.add(nextCentroid);	//New
@@ -147,7 +134,6 @@ public class EngDAStar {
 				// store A* information about this promising candidate City
 				if (better) {
 					nextCentroid.cameFrom = x;
-					// Following in EngD: nextNode.edgeFrom = l;
 					System.out.println("Edge: " + tentativeCost);
 					nextCentroid.gx = tentativeCost;
 					System.out.println("hx: " + nextCentroid.hx);
@@ -167,10 +153,6 @@ public class EngDAStar {
 	 * @param n the end point of the path
 	 * @return an Route from start to goal
 	 */
-	//In EngD:
-	//ArrayList<GeomPlanarGraphDirectedEdge> reconstructPath(AStarNodeWrapper n)	
-	//ArrayList<GeomPlanarGraphDirectedEdge> result =
-    	//new ArrayList<GeomPlanarGraphDirectedEdge>();
 	static EngDRoute reconstructRoute(AStarNodeWrapper n, AStarNodeWrapper start, AStarNodeWrapper end,
 			EngDNGOTeam team) {
 		//In EngD: new ArrayList<GeomPlanarGraphDirectedEdge>();
@@ -213,17 +195,6 @@ public class EngDAStar {
 				}
                 locations.add(0, getPointAlongLine(locations.get(0), x.city.location, 1)); //**CRUCIAL***
                 edges.add(0,  edge);
-                
-				/*
-				 * if (x.cameFrom != null) { edge =
-				 * roadNetwork.getEdge(x.cameFrom.city, x.city); edgeInfo =
-				 * (RoadInfo) edge.getInfo(); mod_speed = edgeInfo.getSpeed() *
-				 * Parameters.TEMPORAL_RESOLUTION;// now km per step // convert
-				 * speed to cell block per step mod_speed =
-				 * Parameters.convertFromKilometers(mod_speed); }
-				 * 
-				 * if (x.cameFrom == null) { refugee.setCurrent(x.city); }
-				 */
 				to = x;
 				x = x.cameFrom;
 				if (x != null && x.cameFrom != null)								// != 'Not equal to'
@@ -263,30 +234,7 @@ public class EngDAStar {
 	 */
 	static double heuristic(Centroid x, Centroid y) {
 		return x.location.distance(y.location) * EngDParameters.HEU_WEIGHT;
-	/*
-	 * FROM EngD:
-	 * double heuristic(Node x, Node y)	{
-        Coordinate xnode = x.getCoordinate();
-        Coordinate ynode = y.getCoordinate();
-        return Math.sqrt(Math.pow(xnode.x - ynode.x, 2)
-            + Math.pow(xnode.y - ynode.y, 2));
-	 */
-	
 	}
-	
-	/*
-	 // Used in EngD/Gridlock
-     //* //////////////////////////// Road Length //////////////////////////////////
-     //* @param e
-     //* @return The length of an edge
-     
-    double length(GeomPlanarGraphDirectedEdge e)	{
-        Coordinate xnode = e.getFromNode().getCoordinate();
-        Coordinate ynode = e.getToNode().getCoordinate();
-        return Math.sqrt(Math.pow(xnode.x - ynode.x, 2)
-            + Math.pow(xnode.y - ynode.y, 2));
-    }
-	*/
 	
 	/**
 	 * Considers the list of Cities open for consideration and returns the City

@@ -116,24 +116,6 @@ public class EngDRoute {
 		// this.start, speed);
 	}
 
-	/*
-	 * public void addToEnd(Int2D location) { // convert speed to correct units
-	 * double speed = this.speed;
-	 * 
-	 * speed *= Parameters.TEMPORAL_RESOLUTION;// now km per step
-	 * 
-	 * // convert speed to cell block per step speed =
-	 * Parameters.convertFromKilometers(speed);
-	 * 
-	 * double dist = location.distance(locations.get(locations.size() -
-	 * 1).getLoc()); while (speed < dist) {
-	 * locations.add(AStar.getPointAlongLine(locations.get(locations.size() -
-	 * 1), location, speed / dist)); dist = locations.get(locations.size() -
-	 * 1).distance(location); }
-	 * 
-	 * locations.add(location); }
-	 */
-
 	public double getSpeed() {
 		return speed;
 	}

@@ -129,36 +129,15 @@ class Centroid {
 		this.familyPresence = familyPresence;
 	}
 
-	/*
-	 * public void addMembers(Bag people) { refugees.addAll(people); }
-	 */
-
 	public void addMember(EngDAgent r) {
 		engdagents.add(r);
 		arrivals++;
 	}
 
-	/*public void removeMembers(Bag people){
-		refugees.remove(people);
-		passerbyCount += people.size();
-	}*/
-
 	public void removeMember(EngDAgent r){
 		if (engdagents.remove(r))
 			departures ++;
 	}
-
-	/*public void setNearestNode(MigrationBuilder.Node node) {
-		nearestNode = node;
-	}
-
-	public MigrationBuilder.Node getNearestNode() {
-		return nearestNode;
-	}
-
-	public void cacheRoute(Route route, City destination) {
-		cachedPaths.put(destination, route);
-	}*/
 
 	public Map<Centroid, EngDRoute> getCachedRoutes() {
 		return cachedPaths;

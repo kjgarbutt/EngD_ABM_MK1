@@ -382,8 +382,6 @@ class EngDModelBuilder {
 					sum += percentage;
 					list.add(sum);
 				}
-				// System.out.println("sum = " + sum);
-				// System.out.println();
 
 				// now add it to the hashmap
 				age_dist.put(centroid_id, list);
@@ -402,7 +400,6 @@ class EngDModelBuilder {
 
 	private static double pick_fin_status(
 			HashMap<Integer, NormalDistribution> fin_dist, int centroidid) {
-		// TODO Auto-generated method stub
 		NormalDistribution nd = fin_dist.get(centroidid);
 		return nd.sample();
 
@@ -412,33 +409,6 @@ class EngDModelBuilder {
 		int familySize = (int) Math.round(nd.sample());
 		return familySize;
 	}
-
-	/*
-	 * static void extractFromRoadLinks(GeomVectorField roadLinks, EngDModel
-	 * engdModelSim) { Bag geoms = roadLinks.getGeometries(); Envelope e =
-	 * roadLinks.getMBR(); double xmin = e.getMinX(), ymin = e.getMinY(), xmax =
-	 * e.getMaxX(), ymax = e .getMaxY(); int xcols = engdModelSim.world_width -
-	 * 1, ycols = engdModelSim.world_height - 1; int count = 0;
-	 * 
-	 * for (Object o : geoms) { MasonGeometry gm = (MasonGeometry) o; int from =
-	 * gm.getIntegerAttribute("FR"); int to = gm.getIntegerAttribute("TO");
-	 * double speed = gm.getDoubleAttribute("SPEED_1"); double distance =
-	 * gm.getDoubleAttribute("LENGTH_1"); double spop =
-	 * gm.getDoubleAttribute("SPOP"); double cost =
-	 * gm.getDoubleAttribute("COST"); double transportlevel =
-	 * gm.getDoubleAttribute("TLEVEL_1"); double deaths =
-	 * gm.getDoubleAttribute("DEATH_1"); System.out.println("pop weight: " +
-	 * spop); EngDRoadInfo edgeinfo = new EngDRoadInfo(gm.geometry, from, to,
-	 * speed, spop, distance, cost, transportlevel, deaths);
-	 * 
-	 * // build road network
-	 * engdModelSim.roadNetwork.addEdge(engdModelSim.centroidList.get(from),
-	 * engdModelSim.centroidList.get(to), edgeinfo);
-	 * engdModelSim.roadNetwork.addEdge(engdModelSim.centroidList.get(to),
-	 * engdModelSim.centroidList.get(from), edgeinfo); }
-	 * 
-	 * // addRedirects(); }
-	 */
 
 	private static void addIntersectionNodes(Iterator<?> nodeIterator,
 			GeomVectorField intersections) {
