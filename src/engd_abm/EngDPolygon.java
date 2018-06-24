@@ -2,14 +2,14 @@ package engd_abm;
 
 import sim.util.geo.MasonGeometry;
 import java.util.ArrayList;
-public class Polygon extends MasonGeometry	{
+public class EngDPolygon extends MasonGeometry	{
     String soc;
 
-    ArrayList<Polygon> neighbors;
+    ArrayList<EngDPolygon> neighbors;
 
-    public Polygon()	{
+    public EngDPolygon()	{
         super();
-        neighbors = new ArrayList<Polygon>();
+        neighbors = new ArrayList<EngDPolygon>();
     }
 
     public void init()	{

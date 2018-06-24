@@ -12,11 +12,11 @@ import sim.field.network.Network;
 import sim.util.Bag;
 
 class EngDModel extends SimState {
-	
-	public Continuous2D engdModelSim;
+
+	public Continuous2D world;
 
 	public Network roadNetwork = new Network();
-	public GeomVectorField cityPoints;
+	public GeomVectorField centroids;
 	public GeomVectorField boundary;
 	public GeomVectorField osvi;
 	public static GeomVectorField roads;
@@ -38,9 +38,11 @@ class EngDModel extends SimState {
 	public int world_height;
 
 	public long total_pop = 0;
-	
-	public Bag lsoas = new Bag();
-	public Map<Integer, Node> cityList = new HashMap<>();
+
+	public Bag agents;
+	public Bag agentTeams;
+	public Bag lsoacentroids = new Bag();
+	public Map<Integer, Centroid> centroidList = new HashMap<>();
 
 	public EngDModel(long seed) {
 		super(seed);
@@ -49,6 +51,8 @@ class EngDModel extends SimState {
 	@Override
 	public void start() {
 		super.start();
+		agents = new Bag();
+		agentTeams = new Bag();
 		EngDModelBuilder.initializeWorld(this);
 	}
 
@@ -60,11 +64,11 @@ class EngDModel extends SimState {
 
 	public static void main(String[] args) {
 		long seed = System.currentTimeMillis();
-		EngDModel engdModelSim = new EngDModel(seed);
-		engdModelSim.start();
-		Schedule schedule = engdModelSim.schedule;
+		EngDModel simState = new EngDModel(seed);
+		simState.start();
+		Schedule schedule = simState.schedule;
 		while (true) {
-			if (!schedule.step(engdModelSim)) {
+			if (!schedule.step(simState)) {
 				break;
 			}
 		}

@@ -1,17 +1,11 @@
 package engd_abm;
-
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.planargraph.DirectedEdgeStar;
-
-import sim.util.Bag;
 import sim.util.Int2D;
 
-class Node {
+class Centroid {
 	Int2D location;
 	String name;
 	private int quota; // 1
@@ -22,16 +16,16 @@ class Node {
 	private double violence; // 2
 	private double economy; // 3
 	private double familyPresence; // 2
-	private HashSet<EngDAgent> ngoagents;
+	private HashSet<EngDAgent> engdagents;
 	private int departures;
 	private int arrivals;
 
 	// need name, get name, set name
 	// private MigrationBuilder.Node nearestNode;
-	protected HashMap<Node, EngDRoute> cachedPaths;
+	protected HashMap<Centroid, EngDRoute> cachedPaths;
 
 	// links to cityAttributes read in in MigrationBuilder.java
-	public Node(Int2D location, int ID, String name, int origin, double scaledPop, int pop, int quota, double violence,
+	public Centroid(Int2D location, int ID, String name, int origin, double scaledPop, int pop, int quota, double violence,
 			double economy, double familyPresence) {
 		this.name = name;
 		this.location = location;
@@ -43,7 +37,7 @@ class Node {
 		this.economy = economy;
 		this.familyPresence = familyPresence;
 		this.origin = origin;
-		this.ngoagents = new HashSet<EngDAgent>();
+		this.engdagents = new HashSet<EngDAgent>();
 		this.departures = 0;
 	}
 
@@ -79,12 +73,12 @@ class Node {
 		return pop;
 	}
 
-	public int getRefugeePopulation() {
-		return ngoagents.size();
+	public int getAgentPopulation() {
+		return engdagents.size();
 	}
 
-	public HashSet<EngDAgent> getNGOAgents() {
-		return ngoagents;
+	public HashSet<EngDAgent> getAgents() {
+		return engdagents;
 	}
 
 	public int getQuota() {
@@ -135,12 +129,12 @@ class Node {
 		this.familyPresence = familyPresence;
 	}
 
-	/*public void addMembers(Bag people) {
-		refugees.addAll(people);
-	}*/
+	/*
+	 * public void addMembers(Bag people) { refugees.addAll(people); }
+	 */
 
-	public void addAgent(EngDAgent r) {
-		ngoagents.add(r);
+	public void addMember(EngDAgent r) {
+		engdagents.add(r);
 		arrivals++;
 	}
 
@@ -149,8 +143,8 @@ class Node {
 		passerbyCount += people.size();
 	}*/
 
-	public void removeAgent(EngDAgent r){
-		if (ngoagents.remove(r))
+	public void removeMember(EngDAgent r){
+		if (engdagents.remove(r))
 			departures ++;
 	}
 
@@ -166,24 +160,21 @@ class Node {
 		cachedPaths.put(destination, route);
 	}*/
 
-	public Map<Node, EngDRoute> getCachedRoutes() {
+	public Map<Centroid, EngDRoute> getCachedRoutes() {
 		return cachedPaths;
 	}
 
-	public EngDRoute getRoute(Node destination, EngDNGOTeam ngoAgentTeam) {
-		EngDRoute engdroute;
+	public EngDRoute getRoute(Centroid destination, EngDNGOTeam team) {
+		EngDRoute route;
 
-		engdroute = EngDAStar.engdAstarPath(this, destination, ngoAgentTeam);
-		//route = EngDAStar.astarPath(Node start, Node goal, EngDNGOTeam ngoagent)
+		route = EngDAStar.astarPath(this, destination, team);
 		//System.out.println(route.getNumSteps());
 
-		return engdroute;
+		return route;
 	}
 
 	public double getScale(){
-		return ngoagents.size() * 1.0 / (EngDParameters.TOTAL_POP);
+		return engdagents.size() * 1.0 / (EngDParameters.TOTAL_POP);
 	}
-
-	
 
 }

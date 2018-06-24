@@ -10,6 +10,7 @@ import java.util.PriorityQueue;
 
 import sim.field.network.Edge;
 import sim.field.network.Network;
+import sim.util.Bag;
 import sim.util.Int2D;
 import sim.util.geo.GeomPlanarGraphDirectedEdge;
 
@@ -21,7 +22,7 @@ import ec.util.MersenneTwisterFast;
 
 @SuppressWarnings("restriction")
 public class EngDAStar {
-	
+
 	/**
 	 * Assumes that both the start and end location are Cities as opposed to
 	 * LOCATIONS
@@ -33,97 +34,134 @@ public class EngDAStar {
 	public static Network roadNetwork = EngDModelBuilder.engdModelSim.roadNetwork;
 	public static MersenneTwisterFast random = new MersenneTwisterFast();
 
-	//public ArrayList<GeomPlanarGraphDirectedEdge> astarPath(Node start, Node goal, EngDNGOTeam refugeeFamily)	{
-	static public EngDRoute engdAstarPath(Node node, Node destination, EngDNGOTeam ngoagent)	{
-        // initial check
-    	long startTime = System.currentTimeMillis();
-        if (node == null || destination == null)	{
-            System.out.println("Error: invalid node provided to AStar");
-        }
+	static public EngDRoute astarPath(Centroid start, Centroid goal, EngDNGOTeam team) {
+		// initial check - same as Gridlock
+		long startTime = System.currentTimeMillis();
+		if (start == null || goal == null) {
+			System.out.println("Error: invalid City provided to AStar");
+		}
+		// containers for the metainformation about the Cities relative to the A* search
+		
+		//Following in EngD:
+		//ArrayList<GeomPlanarGraphDirectedEdge> result = new ArrayList<GeomPlanarGraphDirectedEdge>();
+		HashMap<Centroid, AStarNodeWrapper> foundCentroids = new HashMap<Centroid, AStarNodeWrapper>();
+		//HashMap<Node, AStarNodeWrapper> foundNodes = new HashMap<Node, AStarNodeWrapper>();
+		
+		AStarNodeWrapper startCentroid = new AStarNodeWrapper(start);
+		//AStarNodeWrapper startNode = new AStarNodeWrapper(start);
+		AStarNodeWrapper goalCentroid = new AStarNodeWrapper(goal);
+		//AStarNodeWrapper goalNode = new AStarNodeWrapper(goal);
+		foundCentroids.put(start, startCentroid);	//foundNodes.put(start, startNode);
+		foundCentroids.put(goal, goalCentroid);	//foundNodes.put(goal, goalNode);
 
-        // set up the containers for the result
-        //ArrayList<GeomPlanarGraphDirectedEdge> result =
-            //new ArrayList<GeomPlanarGraphDirectedEdge>();
+		startCentroid.gx = 0;	//startNode.gx = 0;
+		startCentroid.hx = heuristic(start, goal); 
+		startCentroid.fx = heuristic(start, goal);
 
-        // containers for the metainformation about the Nodes relative to the
-        // A* search
-        HashMap<Node, AStarNodeWrapper> foundNodes =
-            new HashMap<Node, AStarNodeWrapper>();
-
-        AStarNodeWrapper startNode = new AStarNodeWrapper(node);
-        AStarNodeWrapper goalNode = new AStarNodeWrapper(destination);
-        foundNodes.put(node, startNode);
-        foundNodes.put(destination, goalNode);
-
-        startNode.gx = 0;
-        startNode.hx = heuristic(node, destination);
-        startNode.fx = heuristic(node, destination);
-
-        // A* containers: nodes to be investigated, nodes that have been investigated
-        HashSet<AStarNodeWrapper> closedSet = new HashSet<>(10000), openSet = new HashSet<>(10000);
+		// A* containers: allRoadCities to be investigated, allRoadCities that have been investigated
+		/* Following in EngD:
+		 	ArrayList<AStarNodeWrapper> closedSet = new ArrayList<AStarNodeWrapper>(),
+	            openSet = new ArrayList<AStarNodeWrapper>();
+	        openSet.add(startNode);
+	        */
+		HashSet<AStarNodeWrapper> closedSet = new HashSet<>(10000), openSet = new HashSet<>(10000);
 		PriorityQueue<AStarNodeWrapper> openSetQueue = new PriorityQueue<>(10000);
-		openSet.add(startNode);
-		openSetQueue.add(startNode);
+		openSet.add(startCentroid);
+		openSetQueue.add(startCentroid);
+		while (openSet.size() > 0) {
+			// while there are reachable allRoadCities to investigate
+			//AStarCityWrapper x = findMin(openSet);
+			AStarNodeWrapper x = openSetQueue.peek();
+			System.out.println("Peek: " + x.city.getName());
+			if (x == null) {
+				AStarNodeWrapper n = findMin(openSet);
+			}
+			// find the shortest path so far
+			if (x.city == goal) {
+				//we have found the shortest possible path to the goal!
+				//Reconstruct the path and send it back.
+				if (x.cameFrom == null)
+					System.out.println(x.city.getName());
+				return reconstructRoute(goalCentroid, startCentroid, goalCentroid, team); //return reconstructPath(goalNode); 
+			}
+			openSet.remove(x);
+			// maintain the lists
+			openSetQueue.remove();	//new
+			closedSet.add(x);
 
-        while (openSet.size() > 0)	{
-        	// while there are reachable nodes to investigate
-            AStarNodeWrapper x = findMin(openSet);
-            // find the shortest path so far
-            if (x.node == destination)	{
-            	// we have found the shortest possible path to the goal!
-                // Reconstruct the path and send it back.
-                return reconstructRoute(goalNode, startNode, goalNode, ngoagent);
-            }
-            openSet.remove(x);
-            // maintain the lists
-            closedSet.add(x);
+			// check all the neighbors of this location
+			/*	Following in EngD:
+			 * 	DirectedEdgeStar des = x.node.getOutEdges();
+            	for (Object o : des.getEdges().toArray())	{
+                	GeomPlanarGraphDirectedEdge l = (GeomPlanarGraphDirectedEdge) o;
+                	Node next = null;
+                	next = l.getToNode();
+			 */
+			Bag edges = roadNetwork.getEdgesOut(x.city);
+			for (Object l : edges) {
+				Edge e = (Edge) l;
+				Centroid n = (Centroid) e.from();
+ 				if (n == x.city)
+					n = (Centroid) e.to();
 
-            // check all the edges out from this Node
-            DirectedEdgeStar des = x.node.getOutEdges();
-            for (Object o : des.getEdges().toArray())	{
-                GeomPlanarGraphDirectedEdge l = (GeomPlanarGraphDirectedEdge) o;
-                Node next = null;
-                next = l.getToNode();
+				// get the A* meta information about this City
+				AStarNodeWrapper nextCentroid;	//AStarNodeWrapper nextNode;
+				if (foundCentroids.containsKey(n))	//if (foundNodes.containsKey(next))	{
+					nextCentroid = foundCentroids.get(n);	//nextNode = foundNodes.get(next);
+				else {
+					nextCentroid = new AStarNodeWrapper(n);
+					foundCentroids.put(n, nextCentroid);
+				}
+				System.out.println(nextCentroid.city.getName());
+				if (closedSet.contains(nextCentroid)) // it has already been considered
+					continue;
 
-                // get the A* meta information about this Node
-                AStarNodeWrapper nextNode;
-                if (foundNodes.containsKey(next))	{
-                    nextNode = foundNodes.get(next);
-                } else	{
-                    nextNode = new AStarNodeWrapper(next);
-                    foundNodes.put(next, nextNode);
-                }
+				/////////////////////////////////////////////////////
+				// ALL NEW: /////////////////////////////////////////
+				// otherwise evaluate the cost of this City/edge combo
+				EngDRoadInfo edge = (EngDRoadInfo) e.getInfo();
+				// System.out.println(edge.getWeightedDistance());
+				double edgeweight = edge.getWeightedDistance() * EngDParameters.DISTANCE_WEIGHT
+						+ edge.getSpeed() * EngDParameters.SPEED_WEIGHT - edge.getScaledPopulation() * EngDParameters.POP_WEIGHT
+						+ edge.getScaledCost() * EngDParameters.COST_WEIGHT
+						+ edge.getTransportLevel() * EngDParameters.TRANSPORT_LEVEL_WEIGHT
+						+ edge.getDeaths() * EngDParameters.RISK_WEIGHT * team.dangerCare();
+				// edgeweight = getWeightedDistance * 0.1
+				//+ 1 * 0.1 -
+				/////////////////////////////////////////////////////
+				
+				System.out.println(edge.getScaledPopulation());
+				System.out.println("gx: " + x.gx + " edgeweight: " + edgeweight);
+				double tentativeCost = x.gx + edgeweight; // changed from integer, still need to change the weighting of the edge weight
+				boolean better = false;
+				//Same as in EngD:
+				if (!openSet.contains(nextCentroid)) {
+					openSet.add(nextCentroid);
+					openSetQueue.add(nextCentroid);	//New
+					nextCentroid.hx = heuristic(n, goal);
+					better = true;
+				} else if (tentativeCost < nextCentroid.gx) {
+					better = true;
+				}
 
-                if (closedSet.contains(nextNode))	{
-                	// it has already been considered	
-                    continue;
-                }
+				// store A* information about this promising candidate City
+				if (better) {
+					nextCentroid.cameFrom = x;
+					// Following in EngD: nextNode.edgeFrom = l;
+					System.out.println("Edge: " + tentativeCost);
+					nextCentroid.gx = tentativeCost;
+					System.out.println("hx: " + nextCentroid.hx);
+					nextCentroid.fx = nextCentroid.gx + nextCentroid.hx;
+					System.out.println("gx: " + nextCentroid.gx + "fx: " + nextCentroid.fx);
+				}
+			}
 
-                // otherwise evaluate the cost of this node/edge combo
-                double tentativeCost = x.gx + length(l);
-                boolean better = false;
+		}
+		return null;
+		//return result;
+	}
 
-                if (!openSet.contains(nextNode))	{
-                    openSet.add(nextNode);
-                    nextNode.hx = heuristic(next, destination);
-                    better = true;
-                } else if (tentativeCost < nextNode.gx)	{
-                    better = true;
-                }
-
-                // store A* information about this promising candidate node
-                if (better)	{
-                    nextNode.cameFrom = x;
-                    nextNode.edgeFrom = l;
-                    nextNode.gx = tentativeCost;
-                    nextNode.fx = nextNode.gx + nextNode.hx;
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
+	/**
 	 * Takes the information about the given City n and returns the path that
 	 * found it.
 	 * @param n the end point of the path
@@ -134,7 +172,7 @@ public class EngDAStar {
 	//ArrayList<GeomPlanarGraphDirectedEdge> result =
     	//new ArrayList<GeomPlanarGraphDirectedEdge>();
 	static EngDRoute reconstructRoute(AStarNodeWrapper n, AStarNodeWrapper start, AStarNodeWrapper end,
-			EngDNGOTeam ngoagent) {
+			EngDNGOTeam team) {
 		//In EngD: new ArrayList<GeomPlanarGraphDirectedEdge>();
 		List<Int2D> locations = new ArrayList<Int2D>(100);
 		List<Edge> edges = new ArrayList<Edge>(100);
@@ -144,11 +182,11 @@ public class EngDAStar {
 		AStarNodeWrapper x = n; //Same in EngD
 
 		// start by adding the last one
-		locations.add(0, x.node.location);
+		locations.add(0, x.city.location);
 		Edge edge = null;
 
 		if (x.cameFrom != null) {	//while loop in EngD // != 'Not equal to'
-			edge = (Edge) roadNetwork.getEdge(x.cameFrom.node, x.node);
+			edge = (Edge) roadNetwork.getEdge(x.cameFrom.city, x.city);
 			edges.add(0, edge);
 			EngDRoadInfo edgeInfo = (EngDRoadInfo) edge.getInfo();
 			//RoadInfo edge = (RoadInfo) roadNetwork.getEdge(x.cameFrom.city, x.city).getInfo();
@@ -160,37 +198,36 @@ public class EngDAStar {
 			x = x.cameFrom;	//Same in EngD
 
 			while (x != null) {		
-				double dist = x.node.location.distance(locations.get(0));
-				edge =  roadNetwork.getEdge(x.node, to.node);
+				double dist = x.city.location.distance(locations.get(0));
+				edge =  roadNetwork.getEdge(x.city, to.city);
 				 edgeInfo = (EngDRoadInfo) edge.getInfo();
 				mod_speed = edgeInfo.getSpeed() * EngDParameters.TEMPORAL_RESOLUTION;// now km per step
 				// convert speed to cell block per step
 				mod_speed = EngDParameters.convertFromKilometers(mod_speed);
 
 				while (dist > mod_speed) {
-					locations.add(0, getPointAlongLine(locations.get(0), x.node.location, mod_speed / dist));
+					locations.add(0, getPointAlongLine(locations.get(0), x.city.location, mod_speed / dist));
 					//System.out.println(x.city.getName());
 					edges.add(0, edge);
-					dist = x.node.location.distance(locations.get(0));
+					dist = x.city.location.distance(locations.get(0));
 				}
-                locations.add(0, getPointAlongLine(locations.get(0), x.node.location, 1)); //**CRUCIAL***
+                locations.add(0, getPointAlongLine(locations.get(0), x.city.location, 1)); //**CRUCIAL***
                 edges.add(0,  edge);
                 
-				/*if (x.cameFrom != null) {
-					edge = roadNetwork.getEdge(x.cameFrom.city, x.city);
-					 edgeInfo = (RoadInfo) edge.getInfo();
-					mod_speed = edgeInfo.getSpeed() * Parameters.TEMPORAL_RESOLUTION;// now km per step
-					// convert speed to cell block per step
-					mod_speed = Parameters.convertFromKilometers(mod_speed);
-				}
-
-				if (x.cameFrom == null) {
-					refugee.setCurrent(x.city);
-				}*/
+				/*
+				 * if (x.cameFrom != null) { edge =
+				 * roadNetwork.getEdge(x.cameFrom.city, x.city); edgeInfo =
+				 * (RoadInfo) edge.getInfo(); mod_speed = edgeInfo.getSpeed() *
+				 * Parameters.TEMPORAL_RESOLUTION;// now km per step // convert
+				 * speed to cell block per step mod_speed =
+				 * Parameters.convertFromKilometers(mod_speed); }
+				 * 
+				 * if (x.cameFrom == null) { refugee.setCurrent(x.city); }
+				 */
 				to = x;
 				x = x.cameFrom;
 				if (x != null && x.cameFrom != null)								// != 'Not equal to'
-					totalDistance += x.node.location.distance(x.cameFrom.node.location);
+					totalDistance += x.city.location.distance(x.cameFrom.city.location);
 			}
 		}
 		else{
@@ -200,13 +237,13 @@ public class EngDAStar {
 		//locations.add(0, start.city.location);
 		edges.add(0, edge);
 		//In EngD: return result;
-		return new EngDRoute(locations, edges, totalDistance, start.node, end.node, EngDParameters.WALKING_SPEED);
+		return new EngDRoute(locations, edges, totalDistance, start.city, end.city, EngDParameters.WALKING_SPEED);
 		//return new Route(locations, totalDistance, start.city, end.city, Parameters.WALKING_SPEED);
 	}
-
+	
 	/**
+	 * NOT in EngD/Gridlock
 	 * Gets a point a certain percent a long the line
-	 * 
 	 * @param start
 	 * @param end
 	 * @param percent the percent along the line you want to get. Must be less than 1
@@ -216,16 +253,15 @@ public class EngDAStar {
 		return new Int2D((int) Math.round((end.getX() - start.getX()) * percent + start.getX()),
 				(int) Math.round((end.getY() - start.getY()) * percent + start.getY()));
 	}
-	
-    /**
-     * /////////////////////////// Euclidean Distance ////////////////////////////
-     * Measure of the estimated distance between two Nodes. Extremely basic, just
-     * Euclidean distance as implemented here.
-     * @param x
+
+	/**
+	 * Measure of the estimated distance between two Cities.
+	 * Extremely basic, just Euclidean distance as implemented here.
+	 * @param x
      * @param y
-     * @return notional "distance" between the given nodes.
-     */
-    static double heuristic(Node x, Node y)	{
+	 * @return notional "distance" between the given allRoadCities.
+	 */
+	static double heuristic(Centroid x, Centroid y) {
 		return x.location.distance(y.location) * EngDParameters.HEU_WEIGHT;
 	/*
 	 * FROM EngD:
@@ -236,66 +272,65 @@ public class EngDAStar {
             + Math.pow(xnode.y - ynode.y, 2));
 	 */
 	
-    }
-
-    /**
-     * //////////////////////////// Road Length //////////////////////////////////
-     * @param e
-     * @return The length of an edge
-     */
-    static double length(GeomPlanarGraphDirectedEdge e)	{
+	}
+	
+	/*
+	 // Used in EngD/Gridlock
+     //* //////////////////////////// Road Length //////////////////////////////////
+     //* @param e
+     //* @return The length of an edge
+     
+    double length(GeomPlanarGraphDirectedEdge e)	{
         Coordinate xnode = e.getFromNode().getCoordinate();
         Coordinate ynode = e.getToNode().getCoordinate();
         return Math.sqrt(Math.pow(xnode.x - ynode.x, 2)
             + Math.pow(xnode.y - ynode.y, 2));
     }
-    
-    /**
-     *  //////////////////////// Nodes to Consider ///////////////////////////////
-     *  Considers the list of Nodes open for consideration and returns the node
-     *  with minimum fx value
-     * @param openSet list of open Nodes
-     * @return
-     */
-    static AStarNodeWrapper findMin(Collection<AStarNodeWrapper> openSet)	{
-    	double min = Double.MAX_VALUE;	//double min = 100000;
-        AStarNodeWrapper minNode = null;
-        for (AStarNodeWrapper n : openSet)	{
-            if (n.fx < min)	{
-                min = n.fx;
-                minNode = n;
-            }
-        }
-        return minNode;
-    }
+	*/
+	
+	/**
+	 * Considers the list of Cities open for consideration and returns the City
+	 * with minimum fx value
+	 * 
+	 * @param set
+	 *            list of open Cities
+	 * @return
+	 */
+	static AStarNodeWrapper findMin(Collection<AStarNodeWrapper> set) {
+		double min = Double.MAX_VALUE;	//double min = 100000;
+		AStarNodeWrapper minCentroid = null;	//minNode
+		for (AStarNodeWrapper n : set) {
+			if (n.fx < min) {
+				min = n.fx;
+				minCentroid = n;
+			}
+		}
+		return minCentroid;
+	}
 
-    /**
-     * 
-     * /////////////////////////// A* Node Meta Info /////////////////////////////
-     * A wrapper to contain the A* meta information about the Nodes
-     *
-     */
-    static class AStarNodeWrapper implements Comparable<AStarNodeWrapper> {
-        // the underlying Node associated with the meta information
-        Node node;
-        // the Node from which this Node was most profitably linked
-        AStarNodeWrapper cameFrom;
-        // the edge by which this Node was discovered
-        GeomPlanarGraphDirectedEdge edgeFrom;
-        double gx, hx, fx;
+	/**
+	 * A wrapper to contain the A* meta information about the Cities
+	 *
+	 */
+	static class AStarNodeWrapper implements Comparable<AStarNodeWrapper> {
+		// the underlying City associated with the metainformation
+		Centroid city;	//Node node;
+		// the City from which this City was most profitably linked
+		AStarNodeWrapper cameFrom;	//edgeFrom;
+		double gx, hx, fx;
 
-        public AStarNodeWrapper(Node node2)	{
-            node = node2;
-            gx = 0;
-            hx = 0;
-            fx = 0;
-            cameFrom = null;
-            edgeFrom = null;
-        }
+		public AStarNodeWrapper(Centroid n) { //public AStarNodeWrapper(Node n)	{
+			city = n;	//node = n;
+			gx = 0;
+			hx = 0;
+			fx = 0;
+			cameFrom = null;
+			//edgeFrom = null;
+		}
 
 		@Override
 		public int compareTo(AStarNodeWrapper aStarNodeWrapper) {
 			return Double.compare(this.fx, aStarNodeWrapper.fx);
 		}
-    }
+	}
 }

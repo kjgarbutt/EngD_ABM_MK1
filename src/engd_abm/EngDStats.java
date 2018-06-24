@@ -7,6 +7,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
-import net.sf.csv4j.CSVReader;
+import au.com.bytecode.opencsv.CSVReader;
 public class EngDStats {
 	}

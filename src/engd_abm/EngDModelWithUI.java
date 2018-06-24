@@ -70,7 +70,7 @@ public class EngDModelWithUI extends GUIState {
 		flood3Portrayal.setPortrayalForAll(new GeomPortrayal(Color.CYAN, true));
 
 		boundaryPortrayal.setField(((EngDModel) this.state).boundary);
-		boundaryPortrayal.setPortrayalForAll(new GeomPortrayal(Color.BLACK,
+		boundaryPortrayal.setPortrayalForAll(new GeomPortrayal(Color.YELLOW,
 				true));
 
 		agentsPortrayal.setField(EngDModelBuilder.agents);
