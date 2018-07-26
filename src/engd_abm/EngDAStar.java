@@ -24,7 +24,7 @@ import ec.util.MersenneTwisterFast;
 public class EngDAStar {
 
 	/**
-	 * Assumes that both the start and end location are Cities as opposed to
+	 * Assumes that both the start and end location are Centroids as opposed to
 	 * LOCATIONS
 	 * 
 	 * @param start
@@ -34,31 +34,31 @@ public class EngDAStar {
 	public static Network roadNetwork = EngDModelBuilder.engdModelSim.roadNetwork;
 	public static MersenneTwisterFast random = new MersenneTwisterFast();
 
-	static public EngDRoute astarPath(Centroid start, Centroid goal, EngDNGOTeam team) {
+	static public EngDRoute astarPath(LSOA start, LSOA to, NGOTeam team) {
 		// initial check - same as Gridlock
 		long startTime = System.currentTimeMillis();
-		if (start == null || goal == null) {
+		if (start == null || to == null) {
 			System.out.println("Error: invalid City provided to AStar");
 		}
-		// containers for the metainformation about the Cities relative to the A* search
+		// containers for the metainformation about the Centroids relative to the A* search
 		
 		//Following in EngD:
 		//ArrayList<GeomPlanarGraphDirectedEdge> result = new ArrayList<GeomPlanarGraphDirectedEdge>();
-		HashMap<Centroid, AStarNodeWrapper> foundCentroids = new HashMap<Centroid, AStarNodeWrapper>();
+		HashMap<LSOA, AStarNodeWrapper> foundCentroids = new HashMap<LSOA, AStarNodeWrapper>();
 		//HashMap<Node, AStarNodeWrapper> foundNodes = new HashMap<Node, AStarNodeWrapper>();
 		
 		AStarNodeWrapper startCentroid = new AStarNodeWrapper(start);
 		//AStarNodeWrapper startNode = new AStarNodeWrapper(start);
-		AStarNodeWrapper goalCentroid = new AStarNodeWrapper(goal);
+		AStarNodeWrapper goalCentroid = new AStarNodeWrapper(to);
 		//AStarNodeWrapper goalNode = new AStarNodeWrapper(goal);
 		foundCentroids.put(start, startCentroid);	//foundNodes.put(start, startNode);
-		foundCentroids.put(goal, goalCentroid);	//foundNodes.put(goal, goalNode);
+		foundCentroids.put(to, goalCentroid);	//foundNodes.put(goal, goalNode);
 
 		startCentroid.gx = 0;	//startNode.gx = 0;
-		startCentroid.hx = heuristic(start, goal); 
-		startCentroid.fx = heuristic(start, goal);
+		startCentroid.hx = heuristic(start, to); 
+		startCentroid.fx = heuristic(start, to);
 
-		// A* containers: allRoadCities to be investigated, allRoadCities that have been investigated
+		// A* containers: allRoadNodes to be investigated, allRoadNodes that have been investigated
 		/* Following in EngD:
 		 	ArrayList<AStarNodeWrapper> closedSet = new ArrayList<AStarNodeWrapper>(),
 	            openSet = new ArrayList<AStarNodeWrapper>();
@@ -72,28 +72,28 @@ public class EngDAStar {
 			// while there are reachable allRoadCities to investigate
 			//AStarCityWrapper x = findMin(openSet);
 			AStarNodeWrapper x = openSetQueue.peek();
-			System.out.println("Peek: " + x.city.getName());
+			System.out.println("Peek: " + x.lsoa.getName());
 			if (x == null) {
 				AStarNodeWrapper n = findMin(openSet);
 			}
 			// find the shortest path so far
-			if (x.city == goal) {
+			if (x.lsoa == to) {
 				//we have found the shortest possible path to the goal!
 				//Reconstruct the path and send it back.
 				if (x.cameFrom == null)
-					System.out.println(x.city.getName());
+					System.out.println(x.lsoa.getName());
 				return reconstructRoute(goalCentroid, startCentroid, goalCentroid, team); //return reconstructPath(goalNode); 
 			}
 			openSet.remove(x);
 			// maintain the lists
 			openSetQueue.remove();	//new
 			closedSet.add(x);
-			Bag edges = roadNetwork.getEdgesOut(x.city);
+			Bag edges = roadNetwork.getEdgesOut(x.lsoa);
 			for (Object l : edges) {
 				Edge e = (Edge) l;
-				Centroid n = (Centroid) e.from();
- 				if (n == x.city)
-					n = (Centroid) e.to();
+				LSOA n = (LSOA) e.from();
+ 				if (n == x.lsoa)
+					n = (LSOA) e.to();
 
 				// get the A* meta information about this City
 				AStarNodeWrapper nextCentroid;	//AStarNodeWrapper nextNode;
@@ -103,7 +103,7 @@ public class EngDAStar {
 					nextCentroid = new AStarNodeWrapper(n);
 					foundCentroids.put(n, nextCentroid);
 				}
-				System.out.println(nextCentroid.city.getName());
+				System.out.println(nextCentroid.lsoa.getName());
 				if (closedSet.contains(nextCentroid)) // it has already been considered
 					continue;
 
@@ -114,7 +114,7 @@ public class EngDAStar {
 						+ edge.getSpeed() * EngDParameters.SPEED_WEIGHT - edge.getScaledPopulation() * EngDParameters.POP_WEIGHT
 						+ edge.getScaledCost() * EngDParameters.COST_WEIGHT
 						+ edge.getTransportLevel() * EngDParameters.TRANSPORT_LEVEL_WEIGHT
-						+ edge.getDeaths() * EngDParameters.RISK_WEIGHT * team.dangerCare();
+						+ edge.getDeaths() * EngDParameters.RISK_WEIGHT * team.vulnerableCare();
 				// edgeweight = getWeightedDistance * 0.1
 				//+ 1 * 0.1 -
 				
@@ -125,7 +125,7 @@ public class EngDAStar {
 				if (!openSet.contains(nextCentroid)) {
 					openSet.add(nextCentroid);
 					openSetQueue.add(nextCentroid);	//New
-					nextCentroid.hx = heuristic(n, goal);
+					nextCentroid.hx = heuristic(n, to);
 					better = true;
 				} else if (tentativeCost < nextCentroid.gx) {
 					better = true;
@@ -148,13 +148,13 @@ public class EngDAStar {
 	}
 
 	/**
-	 * Takes the information about the given City n and returns the path that
+	 * Takes the information about the given Centroid n and returns the path that
 	 * found it.
 	 * @param n the end point of the path
 	 * @return an Route from start to goal
 	 */
 	static EngDRoute reconstructRoute(AStarNodeWrapper n, AStarNodeWrapper start, AStarNodeWrapper end,
-			EngDNGOTeam team) {
+			NGOTeam team) {
 		//In EngD: new ArrayList<GeomPlanarGraphDirectedEdge>();
 		List<Int2D> locations = new ArrayList<Int2D>(100);
 		List<Edge> edges = new ArrayList<Edge>(100);
@@ -164,11 +164,11 @@ public class EngDAStar {
 		AStarNodeWrapper x = n; //Same in EngD
 
 		// start by adding the last one
-		locations.add(0, x.city.location);
+		locations.add(0, x.lsoa.location);
 		Edge edge = null;
 
 		if (x.cameFrom != null) {	//while loop in EngD // != 'Not equal to'
-			edge = (Edge) roadNetwork.getEdge(x.cameFrom.city, x.city);
+			edge = (Edge) roadNetwork.getEdge(x.cameFrom.lsoa, x.lsoa);
 			edges.add(0, edge);
 			EngDRoadInfo edgeInfo = (EngDRoadInfo) edge.getInfo();
 			//RoadInfo edge = (RoadInfo) roadNetwork.getEdge(x.cameFrom.city, x.city).getInfo();
@@ -180,25 +180,25 @@ public class EngDAStar {
 			x = x.cameFrom;	//Same in EngD
 
 			while (x != null) {		
-				double dist = x.city.location.distance(locations.get(0));
-				edge =  roadNetwork.getEdge(x.city, to.city);
+				double dist = x.lsoa.location.distance(locations.get(0));
+				edge =  roadNetwork.getEdge(x.lsoa, to.lsoa);
 				 edgeInfo = (EngDRoadInfo) edge.getInfo();
 				mod_speed = edgeInfo.getSpeed() * EngDParameters.TEMPORAL_RESOLUTION;// now km per step
 				// convert speed to cell block per step
 				mod_speed = EngDParameters.convertFromKilometers(mod_speed);
 
 				while (dist > mod_speed) {
-					locations.add(0, getPointAlongLine(locations.get(0), x.city.location, mod_speed / dist));
+					locations.add(0, getPointAlongLine(locations.get(0), x.lsoa.location, mod_speed / dist));
 					//System.out.println(x.city.getName());
 					edges.add(0, edge);
-					dist = x.city.location.distance(locations.get(0));
+					dist = x.lsoa.location.distance(locations.get(0));
 				}
-                locations.add(0, getPointAlongLine(locations.get(0), x.city.location, 1)); //**CRUCIAL***
+                locations.add(0, getPointAlongLine(locations.get(0), x.lsoa.location, 1)); //**CRUCIAL***
                 edges.add(0,  edge);
 				to = x;
 				x = x.cameFrom;
 				if (x != null && x.cameFrom != null)								// != 'Not equal to'
-					totalDistance += x.city.location.distance(x.cameFrom.city.location);
+					totalDistance += x.lsoa.location.distance(x.cameFrom.lsoa.location);
 			}
 		}
 		else{
@@ -208,7 +208,7 @@ public class EngDAStar {
 		//locations.add(0, start.city.location);
 		edges.add(0, edge);
 		//In EngD: return result;
-		return new EngDRoute(locations, edges, totalDistance, start.city, end.city, EngDParameters.WALKING_SPEED);
+		return new EngDRoute(locations, edges, totalDistance, start.lsoa, end.lsoa, EngDParameters.WALKING_SPEED);
 		//return new Route(locations, totalDistance, start.city, end.city, Parameters.WALKING_SPEED);
 	}
 	
@@ -232,7 +232,7 @@ public class EngDAStar {
      * @param y
 	 * @return notional "distance" between the given allRoadCities.
 	 */
-	static double heuristic(Centroid x, Centroid y) {
+	static double heuristic(LSOA x, LSOA y) {
 		return x.location.distance(y.location) * EngDParameters.HEU_WEIGHT;
 	}
 	
@@ -262,13 +262,13 @@ public class EngDAStar {
 	 */
 	static class AStarNodeWrapper implements Comparable<AStarNodeWrapper> {
 		// the underlying City associated with the metainformation
-		Centroid city;	//Node node;
+		LSOA lsoa;	//Node node;
 		// the City from which this City was most profitably linked
 		AStarNodeWrapper cameFrom;	//edgeFrom;
 		double gx, hx, fx;
 
-		public AStarNodeWrapper(Centroid n) { //public AStarNodeWrapper(Node n)	{
-			city = n;	//node = n;
+		public AStarNodeWrapper(LSOA n) { //public AStarNodeWrapper(Node n)	{
+			lsoa = n;	//node = n;
 			gx = 0;
 			hx = 0;
 			fx = 0;
