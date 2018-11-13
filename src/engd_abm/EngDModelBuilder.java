@@ -97,9 +97,9 @@ class EngDModelBuilder {
 		Bag boundaryAtt = new Bag(boundaryAttributes);
 		System.out.println("	Boundary shapefile: " + EngDParameters.BOUNDARY_SHP);
 
-		engdModelSim.cityPoints = new GeomVectorField(sim.world_width, sim.world_height);
-		Bag lsoaAtt = new Bag(cityAttributes);
-		System.out.println("	Centroids shapefile: " + EngDParameters.CENTROIDS_SHP);
+		//engdModelSim.cityPoints = new GeomVectorField(sim.world_width, sim.world_height);
+		//Bag lsoaAtt = new Bag(cityAttributes);
+		//System.out.println("	Centroids shapefile: " + EngDParameters.CENTROIDS_SHP);
 
 		engdModelSim.cityGrid = new SparseGrid2D(sim.world_width, sim.world_height);
 
@@ -123,7 +123,7 @@ class EngDModelBuilder {
 
 		String[] shapeFiles = { EngDParameters.BOUNDARY_SHP, EngDParameters.CENTROIDS_SHP, EngDParameters.ROAD_SHP,
 				EngDParameters.LSOA_SHP, EngDParameters.FLOOD2_SHP, EngDParameters.FLOOD3_SHP };
-		Bag[] attfiles = { boundaryAtt, lsoaAtt, roadAtt, osviAtt, flood2Att, flood3Att };
+		Bag[] attfiles = { boundaryAtt, roadAtt, osviAtt, flood2Att, flood3Att };
 		GeomVectorField[] vectorFields = { engdModelSim.boundary, engdModelSim.cityPoints, EngDModel.roads,
 				engdModelSim.lsoa, engdModelSim.flood2, engdModelSim.flood3 };
 		SparseGrid2D[] gridFields = { engdModelSim.cityGrid };
@@ -274,24 +274,6 @@ class EngDModelBuilder {
 					}
 					engdModelSim.schedule.scheduleRepeating(n);
 				}
-				/*
-				 * int lsoapop = (int) Math.round(pop_dist.get(lsoa.getID()) *
-				 * EngDParameters.TOTAL_POP); System.out.println(lsoa.getName() + ": " +
-				 * lsoapop); while (currentPop <= lsoapop) { EngDNGO n = createNGOTeam(lsoa);
-				 * System.out.println(n.getTeam().size()); engdModelSim.ngoTeams.add(n); for
-				 * (Object o : n.getTeam()) { EngDAgent agent = (EngDAgent) o; currentPop++;
-				 * lsoa.addMember(agent); engdModelSim.agents.add(agent); Int2D loc =
-				 * lsoa.getLocation(); double y_coord = (loc.y *
-				 * EngDParameters.WORLD_TO_POP_SCALE) + (int) (engdModelSim.random.nextDouble()
-				 * * EngDParameters.WORLD_TO_POP_SCALE); double x_coord = (loc.x *
-				 * EngDParameters.WORLD_TO_POP_SCALE) + (int) (engdModelSim.random.nextDouble()
-				 * * EngDParameters.WORLD_TO_POP_SCALE);
-				 * engdModelSim.world.setObjectLocation(agent, new Double2D(x_coord, y_coord));
-				 * int y_coordint = loc.y + (int) ((engdModelSim.random.nextDouble() - 0.5) *
-				 * 3); int x_coordint = loc.x + (int) ((engdModelSim.random.nextDouble() - 0.5)
-				 * * 3); engdModelSim.total_pop++; } engdModelSim.schedule.scheduleRepeating(n);
-				 * }
-				 */
 			}
 		}
 
